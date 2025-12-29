@@ -1,0 +1,4 @@
+{"suite_name": "my_custom_suite", "description": "Template for your own tests - replace with your use case", "version": "1.0.0"}
+{"id": "EXAMPLE-001", "prompt": "What is 2 + 2?", "expected": {"type": "contains", "required_words": ["4"]}, "tags": ["math", "easy"]}
+{"id": "EXAMPLE-002", "prompt": "Extract the email from: 'Contact us at support@example.com for help.'", "expected": {"type": "contains", "required_words": ["support@example.com"]}, "tags": ["extraction"]}
+{"id": "EXAMPLE-003", "prompt": "Is the following sentence positive or negative? 'I love this product!' Reply with only: POSITIVE or NEGATIVE", "expected": {"type": "exact", "value": "POSITIVE"}, "tags": ["sentiment"]}

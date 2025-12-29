@@ -1,0 +1,56 @@
+# Third-Party Licenses
+
+This file lists the licenses of dependencies used by Meridian.
+
+## Python Dependencies
+
+| Package | License | URL |
+|---------|---------|-----|
+| torch | BSD-3-Clause | https://github.com/pytorch/pytorch |
+| transformers | Apache-2.0 | https://github.com/huggingface/transformers |
+| numpy | BSD-3-Clause | https://github.com/numpy/numpy |
+| scipy | BSD-3-Clause | https://github.com/scipy/scipy |
+| click | BSD-3-Clause | https://github.com/pallets/click |
+| streamlit | Apache-2.0 | https://github.com/streamlit/streamlit |
+| plotly | MIT | https://github.com/plotly/plotly.py |
+| openai | MIT | https://github.com/openai/openai-python |
+| anthropic | MIT | https://github.com/anthropics/anthropic-sdk-python |
+| jinja2 | BSD-3-Clause | https://github.com/pallets/jinja |
+| jsonschema | MIT | https://github.com/python-jsonschema/jsonschema |
+| sentence-transformers | Apache-2.0 | https://github.com/UKPLab/sentence-transformers |
+| pytest | MIT | https://github.com/pytest-dev/pytest |
+| tqdm | MIT | https://github.com/tqdm/tqdm |
+
+## Model Weights
+
+| Model | License | Notes |
+|-------|---------|-------|
+| GPT-2 | MIT | OpenAI model weights |
+
+## License Compatibility
+
+All dependencies are compatible with MIT licensing:
+- MIT: Permissive, compatible
+- BSD-3-Clause: Permissive, compatible
+- Apache-2.0: Permissive, compatible (with attribution)
+
+## Attribution Requirements
+
+When distributing Meridian:
+
+1. Include this NOTICE file
+2. Retain LICENSE files of Apache-2.0 dependencies
+3. Provide attribution as required by each license
+
+## Verification
+
+To verify current dependency licenses:
+
+```bash
+pip install pip-licenses
+pip-licenses --format=markdown
+```
+
+---
+
+Last updated: 2025-12-28

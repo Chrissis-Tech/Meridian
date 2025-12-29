@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meridian Report - imo_generation_quality</title>
+    <style>
+        :root {
+            --dark: #111827;
+            --gray: #6B7280;
+            --light: #F3F4F6;
+            --border: #E5E7EB;
+            --success: #059669;
+            --danger: #DC2626;
+            --accent: #6366F1;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #FAFAFA;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: var(--gray);
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+        
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .card-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+        
+        .kpi-row {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        
+        .kpi {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .kpi-value {
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .kpi-value.success { color: var(--success); }
+        .kpi-value.danger { color: var(--danger); }
+        
+        .kpi-label {
+            font-size: 12px;
+            color: var(--gray);
+            margin-top: 4px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        th {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        td {
+            font-size: 14px;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status.pass {
+            background: #D1FAE5;
+            color: var(--success);
+        }
+        
+        .status.fail {
+            background: #FEE2E2;
+            color: var(--danger);
+        }
+        
+        .ci-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        
+        .ci-bar-track {
+            flex: 1;
+            height: 8px;
+            background: var(--light);
+            border-radius: 4px;
+            position: relative;
+        }
+        
+        .ci-bar-fill {
+            position: absolute;
+            height: 100%;
+            background: var(--accent);
+            border-radius: 4px;
+            opacity: 0.3;
+        }
+        
+        .ci-bar-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--dark);
+            border-radius: 50%;
+            top: -2px;
+            transform: translateX(-50%);
+        }
+        
+        .footer {
+            text-align: center;
+            color: var(--gray);
+            font-size: 12px;
+            margin-top: 40px;
+        }
+        
+        .test-id {
+            font-family: 'SF Mono', Monaco, monospace;
+            font-size: 13px;
+        }
+        
+        .latency {
+            color: var(--gray);
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Meridian Evaluation Report</h1>
+        <p class="subtitle">imo_generation_quality • deepseek_chat • 2025-12-29T09:58:54</p>
+        
+        <!-- KPIs -->
+        <div class="card">
+            <div class="card-title">Summary</div>
+            <div class="kpi-row">
+                <div class="kpi">
+                    <div class="kpi-value ">50%</div>
+                    <div class="kpi-label">Accuracy</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-value">5/10</div>
+                    <div class="kpi-label">Tests Passed</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-value">9.0s</div>
+                    <div class="kpi-label">p50 Latency</div>
+                </div>
+                <div class="kpi">
+                    <div class="kpi-value">10.1s</div>
+                    <div class="kpi-label">p95 Latency</div>
+                </div>
+            </div>
+            
+            <!-- CI Bar -->
+            <div class="ci-bar">
+                <span style="font-size: 12px; color: var(--gray);">20%</span>
+                <div class="ci-bar-track">
+                    <div class="ci-bar-fill" style="left: 20.0%; width: 60.0%;"></div>
+                    <div class="ci-bar-point" style="left: 50%;"></div>
+                </div>
+                <span style="font-size: 12px; color: var(--gray);">80%</span>
+            </div>
+            <p style="text-align: center; font-size: 12px; color: var(--gray); margin-top: 8px;">
+                95% Confidence Interval: [20%, 80%]
+            </p>
+        </div>
+        
+        <!-- Results Table -->
+        <div class="card">
+            <div class="card-title">Test Results</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Test ID</th>
+                        <th>Status</th>
+                        <th>Score</th>
+                        <th>Latency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+        <tr>
+            <td class="test-id">IMO-BLACKBOX-001</td>
+            <td><span class="status pass">PASS</span></td>
+            <td>1.00</td>
+            <td class="latency">9.28s</td>
+        </tr>
+        
+        <tr>
+            <td class="test-id">IMO-COMPLETE-001</td>
+            <td><span class="status fail">FAIL</span></td>
+            <td>0.14</td>
+            <td class="latency">9.00s</td>
+        </tr>
+        
+        <tr>
+            <td class="test-id">IMO-CONTRADICT-001</td>
+            <td><span class="status pass">PASS</span></td>
+            <td>1.00</td>
+            <td class="latency">9.19s</td>
+        </tr>
+        
+        <tr>
+            <td class="test-id">IMO-FORMAT-001</td>
+            <td><span class="status fail">FAIL</span></td>
+            <td>—</td>
+            <td class="latency">10.72s</td>
+        </tr>
+        
+        <tr>
+            <td class="test-id">IMO-HEDGE-001</td>
+            <td><span class="status pass">PASS</span></td>
+            <td>1.00</td>
+            <td class="latency">9.34s</td>
+        </tr>
+        
+        <tr>
+            <td class="test-id">IMO-LENGTH-001</td>
+            <td><span class="status pass">PASS</span></td>
+            <td>1.00</td>
+            <td class="latency">8.99s</td>
+        </tr>
+        
+        <tr>
+            <td class="test-id">IMO-NOVEL-001</td>
+            <td><span class="status pass">PASS</span></td>
+            <td>1.00</td>
+            <td class="latency">3.44s</td>
+        </tr>
+        
+        <tr>
+            <td class="test-id">IMO-SANITY-001</td>
+            <td><span class="status fail">FAIL</span></td>
+            <td>0.40</td>
+            <td class="latency">8.91s</td>
+        </tr>
+        
+        <tr>
+            <td class="test-id">IMO-TECHNIQUE-001</td>
+            <td><span class="status fail">FAIL</span></td>
+            <td>0.33</td>
+            <td class="latency">8.76s</td>
+        </tr>
+        
+        <tr>
+            <td class="test-id">IMO-TRUNC-001</td>
+            <td><span class="status fail">FAIL</span></td>
+            <td>0.60</td>
+            <td class="latency">8.89s</td>
+        </tr>
+        
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Failed Tests -->
+        
+        <div class="card">
+            <div class="card-title">Failed Tests Details</div>
+        
+            <div style="margin-bottom: 16px; padding: 12px; background: #FEF2F2; border-radius: 8px;">
+                <div style="font-weight: 600; font-family: monospace; margin-bottom: 8px;">IMO-COMPLETE-001</div>
+                <div style="font-size: 12px; color: var(--gray); white-space: pre-wrap;">Alright — here is an **original inequality problem** in the style of the International Mathematical Olympiad (IMO), together with a **complete solution** meeting all your requirements.
+
+---
+
+## **Prob...</div>
+            </div>
+            
+            <div style="margin-bottom: 16px; padding: 12px; background: #FEF2F2; border-radius: 8px;">
+                <div style="font-weight: 600; font-family: monospace; margin-bottom: 8px;">IMO-FORMAT-001</div>
+                <div style="font-size: 12px; color: var(--gray); white-space: pre-wrap;">```json
+{
+    "id": "2024-NT1",
+    "domain": "Number Theory",
+    "statement": "Find all positive integers $n$ such that $\\sigma(n) = 2n + 1$, where $\\sigma(n)$ denotes the sum of the positive divi...</div>
+            </div>
+            
+            <div style="margin-bottom: 16px; padding: 12px; background: #FEF2F2; border-radius: 8px;">
+                <div style="font-weight: 600; font-family: monospace; margin-bottom: 8px;">IMO-SANITY-001</div>
+                <div style="font-size: 12px; color: var(--gray); white-space: pre-wrap;">Alright — here is an original IMO-style number theory problem about divisibility, followed by a verification section.
+
+---
+
+## **Problem**
+
+Let \( a_1, a_2, a_3, \dots \) be a sequence of positive int...</div>
+            </div>
+            
+            <div style="margin-bottom: 16px; padding: 12px; background: #FEF2F2; border-radius: 8px;">
+                <div style="font-weight: 600; font-family: monospace; margin-bottom: 8px;">IMO-TECHNIQUE-001</div>
+                <div style="font-size: 12px; color: var(--gray); white-space: pre-wrap;">## Problem
+
+Let \( n \geq 3 \) be an integer. A set \( S \) of points in the plane is called *good* if:
+
+1. No three points of \( S \) are collinear.
+2. For any three points \( A, B, C \) in \( S \), ...</div>
+            </div>
+            
+            <div style="margin-bottom: 16px; padding: 12px; background: #FEF2F2; border-radius: 8px;">
+                <div style="font-weight: 600; font-family: monospace; margin-bottom: 8px;">IMO-TRUNC-001</div>
+                <div style="font-size: 12px; color: var(--gray); white-space: pre-wrap;">## Problem
+
+Let \( n \) be a positive integer. A set \( S \) of integers is called **\( n \)-good** if it has the following property:
+
+For any integer \( m \), there exist \( a, b \in S \) (not necess...</div>
+            </div>
+            </div>
+        
+        <div class="footer">
+            <p>Generated by Meridian v0.3.0 • 2025-12-29T09:58:54</p>
+            <p><a href="https://github.com/Chrissis-Tech/Meridian">github.com/Chrissis-Tech/Meridian</a></p>
+        </div>
+    </div>
+</body>
+</html>

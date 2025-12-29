@@ -1,0 +1,82 @@
+{
+    "run_id": "golden_2025-12-28_local_gpt2",
+    "suite_name": "Meridian_core_50",
+    "model_id": "local_gpt2",
+    "timestamp": "2025-12-28T12:00:00Z",
+    "configuration": {
+        "temperature": 0.0,
+        "max_tokens": 256,
+        "device": "cpu"
+    },
+    "results": {
+        "total_tests": 50,
+        "passed_tests": 18,
+        "failed_tests": 32,
+        "error_tests": 0,
+        "accuracy": 0.36,
+        "accuracy_ci_lower": 0.23,
+        "accuracy_ci_upper": 0.50,
+        "mean_latency_ms": 245,
+        "total_cost": 0.0
+    },
+    "by_capability": {
+        "arithmetic": {
+            "total": 10,
+            "passed": 4,
+            "accuracy": 0.40
+        },
+        "instruction_following": {
+            "total": 12,
+            "passed": 3,
+            "accuracy": 0.25
+        },
+        "factual_recall": {
+            "total": 10,
+            "passed": 5,
+            "accuracy": 0.50
+        },
+        "consistency": {
+            "total": 8,
+            "passed": 6,
+            "accuracy": 0.75
+        },
+        "refusal": {
+            "total": 10,
+            "passed": 0,
+            "accuracy": 0.00
+        }
+    },
+    "by_failure_mode": {
+        "calculation_error": {
+            "total": 8,
+            "triggered": 5
+        },
+        "format_violation": {
+            "total": 10,
+            "triggered": 8
+        },
+        "hallucination": {
+            "total": 8,
+            "triggered": 4
+        },
+        "inconsistency": {
+            "total": 8,
+            "triggered": 2
+        },
+        "overconfidence": {
+            "total": 8,
+            "triggered": 8
+        },
+        "prompt_sensitivity": {
+            "total": 8,
+            "triggered": 5
+        }
+    },
+    "environment": {
+        "python_version": "3.11.0",
+        "torch_version": "2.1.0",
+        "transformers_version": "4.35.0",
+        "os": "Windows 11"
+    },
+    "notes": "Baseline run for GPT-2. Low accuracy expected due to model size. Refusal capability not present in GPT-2."
+}

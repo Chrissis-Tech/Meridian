@@ -1,0 +1,21 @@
+{"suite_name": "math_short", "description": "Basic math and arithmetic tests", "task_type": "math_short", "version": "1.0.0"}
+{"id": "MATH-001", "task": "math_short", "prompt": "What is 7 + 8?", "expected": {"type": "exact", "value": "15"}, "scoring": {"method": "numeric_match"}, "tags": ["arithmetic", "addition"]}
+{"id": "MATH-002", "task": "math_short", "prompt": "What is 15 - 9?", "expected": {"type": "exact", "value": "6"}, "scoring": {"method": "numeric_match"}, "tags": ["arithmetic", "subtraction"]}
+{"id": "MATH-003", "task": "math_short", "prompt": "What is 6 × 7?", "expected": {"type": "exact", "value": "42"}, "scoring": {"method": "numeric_match"}, "tags": ["arithmetic", "multiplication"]}
+{"id": "MATH-004", "task": "math_short", "prompt": "What is 144 ÷ 12?", "expected": {"type": "exact", "value": "12"}, "scoring": {"method": "numeric_match"}, "tags": ["arithmetic", "division"]}
+{"id": "MATH-005", "task": "math_short", "prompt": "What is 17 mod 5?", "expected": {"type": "exact", "value": "2"}, "scoring": {"method": "numeric_match"}, "tags": ["arithmetic", "modulo"]}
+{"id": "MATH-006", "task": "math_short", "prompt": "What is 2^10?", "expected": {"type": "exact", "value": "1024"}, "scoring": {"method": "numeric_match"}, "tags": ["arithmetic", "exponent"]}
+{"id": "MATH-007", "task": "math_short", "prompt": "What is the square root of 81?", "expected": {"type": "exact", "value": "9"}, "scoring": {"method": "numeric_match"}, "tags": ["arithmetic", "sqrt"]}
+{"id": "MATH-008", "task": "math_short", "prompt": "How many prime numbers are between 1 and 10?", "expected": {"type": "exact", "value": "4"}, "scoring": {"method": "numeric_match"}, "tags": ["counting", "primes"]}
+{"id": "MATH-009", "task": "math_short", "prompt": "What is 3! (3 factorial)?", "expected": {"type": "exact", "value": "6"}, "scoring": {"method": "numeric_match"}, "tags": ["arithmetic", "factorial"]}
+{"id": "MATH-010", "task": "math_short", "prompt": "If x = 5, what is 2x + 3?", "expected": {"type": "exact", "value": "13"}, "scoring": {"method": "numeric_match"}, "tags": ["algebra", "substitution"]}
+{"id": "MATH-011", "task": "math_short", "prompt": "What is 25% of 80?", "expected": {"type": "exact", "value": "20"}, "scoring": {"method": "numeric_match"}, "tags": ["arithmetic", "percentage"]}
+{"id": "MATH-012", "task": "math_short", "prompt": "What is the GCD of 48 and 18?", "expected": {"type": "exact", "value": "6"}, "scoring": {"method": "numeric_match"}, "tags": ["number_theory", "gcd"]}
+{"id": "MATH-013", "task": "math_short", "prompt": "What is the LCM of 4 and 6?", "expected": {"type": "exact", "value": "12"}, "scoring": {"method": "numeric_match"}, "tags": ["number_theory", "lcm"]}
+{"id": "MATH-014", "task": "math_short", "prompt": "How many digits are in 1000?", "expected": {"type": "exact", "value": "4"}, "scoring": {"method": "numeric_match"}, "tags": ["counting", "digits"]}
+{"id": "MATH-015", "task": "math_short", "prompt": "What is (-5) × (-3)?", "expected": {"type": "exact", "value": "15"}, "scoring": {"method": "numeric_match"}, "tags": ["arithmetic", "negative"]}
+{"id": "MATH-016", "task": "math_short", "prompt": "What is 1/4 + 1/4 expressed as a decimal?", "expected": {"type": "exact", "value": "0.5"}, "scoring": {"method": "numeric_match"}, "tags": ["arithmetic", "fractions"]}
+{"id": "MATH-017", "task": "math_short", "prompt": "How many sides does a hexagon have?", "expected": {"type": "exact", "value": "6"}, "scoring": {"method": "numeric_match"}, "tags": ["geometry", "shapes"]}
+{"id": "MATH-018", "task": "math_short", "prompt": "What is 99 + 1?", "expected": {"type": "exact", "value": "100"}, "scoring": {"method": "numeric_match"}, "tags": ["arithmetic", "addition"]}
+{"id": "MATH-019", "task": "math_short", "prompt": "If a rectangle has length 8 and width 5, what is its area?", "expected": {"type": "exact", "value": "40"}, "scoring": {"method": "numeric_match"}, "tags": ["geometry", "area"]}
+{"id": "MATH-020", "task": "math_short", "prompt": "What is the next prime number after 7?", "expected": {"type": "exact", "value": "11"}, "scoring": {"method": "numeric_match"}, "tags": ["number_theory", "primes"]}

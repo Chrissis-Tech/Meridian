@@ -1,0 +1,126 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "Meridian"
+version = "0.4.0"
+description = "LLM Evaluation & Interpretability Framework - Systematic testing with statistical rigor"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Chrissis-Tech"}
+]
+requires-python = ">=3.10"
+keywords = ["llm", "evaluation", "interpretability", "deepseek", "transformers"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # Core ML
+    "torch>=2.0.0",
+    "transformers>=4.35.0",
+    "tokenizers>=0.15.0",
+    
+    # API Adapters (optional usage)
+    "openai>=1.0.0",
+    "anthropic>=0.7.0",
+    
+    # Data handling
+    "jsonschema>=4.20.0",
+    "jsonlines>=4.0.0",
+    "pyyaml>=6.0.0",
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    
+    # Statistics
+    "scipy>=1.11.0",
+    "scikit-learn>=1.3.0",
+    
+    # Visualization
+    "matplotlib>=3.8.0",
+    "seaborn>=0.13.0",
+    "plotly>=5.18.0",
+    "altair>=5.2.0",
+    
+    # UI
+    "streamlit>=1.29.0",
+    
+    # Reporting
+    "jinja2>=3.1.0",
+    "markdown>=3.5.0",
+    
+    # CLI
+    "click>=8.1.0",
+    "rich>=13.7.0",
+    
+    # Utilities
+    "python-dotenv>=1.0.0",
+    "tqdm>=4.66.0",
+    "tenacity>=8.2.0",
+    
+    # API Server
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+]
+
+providers = [
+    # Optional provider SDKs
+    "mistralai>=0.0.7",
+    "groq>=0.4.0",
+    "together>=0.2.0",
+]
+
+sae = [
+    # For Sparse Autoencoder training
+    "einops>=0.7.0",
+    "wandb>=0.16.0",
+]
+
+[project.scripts]
+meridian = "meridian.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Chrissis-Tech/Meridian"
+Documentation = "https://github.com/Chrissis-Tech/Meridian#readme"
+Repository = "https://github.com/Chrissis-Tech/Meridian"
+
+[tool.hatch.build.targets.wheel]
+packages = ["meridian", "core", "reports", "ui"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_ignores = true

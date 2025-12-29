@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use Meridian in your research, please cite it as below."
+title: "Meridian: A Framework for Rigorous LLM Evaluation"
+version: 0.4.0
+date-released: 2025-12-29
+url: "https://github.com/Chrissis-Tech/Meridian"
+repository-code: "https://github.com/Chrissis-Tech/Meridian"
+license: MIT
+type: software
+authors:
+  - name: "Chrissis-Tech"
+  - name: "Contributors"
+keywords:
+  - large-language-models
+  - evaluation
+  - llm-testing
+  - production-testing
+  - machine-learning
+abstract: >-
+  Meridian is a framework for rigorous LLM evaluation designed for production use.
+  It provides production-grade test suites, statistical rigor through bootstrap
+  confidence intervals, and enables honest assessment of model capabilities
+  before deployment.

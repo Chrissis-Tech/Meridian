@@ -1,0 +1,20 @@
+{
+    "suite_name": "math_short",
+    "model_id": "deepseek_chat",
+    "created_at": "2025-12-28T20:20:00Z",
+    "version": "0.3.0",
+    "results": {
+        "total_tests": 20,
+        "passed": 17,
+        "failed": 3,
+        "accuracy": 0.85,
+        "accuracy_ci_low": 0.65,
+        "accuracy_ci_high": 1.0,
+        "mean_latency_ms": 5431
+    },
+    "configuration": {
+        "temperature": 0.0,
+        "max_tokens": 256
+    },
+    "notes": "Baseline for DeepSeek Chat on math_short suite"
+}

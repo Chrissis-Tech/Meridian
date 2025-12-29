@@ -1,0 +1,85 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+.env
+.venv
+env/
+venv/
+ENV/
+
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Results and artifacts
+data/
+results/
+reports/output/
+
+# Model cache (can be large)
+models_cache/
+.cache/
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# SAE training artifacts
+sae_checkpoints/
+wandb/
+
+# Generated reports (keep templates)
+reports/output/*.html
+reports/output/*.md
+
+# API keys (NEVER commit)
+.env.local
+.env.production
+secrets.yaml
