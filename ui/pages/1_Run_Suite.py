@@ -137,14 +137,14 @@ with col3:
 
 # Attestation section
 st.markdown("---")
-st.subheader("🔐 Tamper-Evident Attestation")
+st.subheader("Tamper-Evident Attestation")
 
 col1, col2 = st.columns([1, 3])
 with col1:
     enable_attestation = st.checkbox("Enable Attestation", value=False)
 
 with col2:
-    with st.expander("ℹ️ What is Attestation?"):
+    with st.expander("What is Attestation?"):
         st.markdown("""
 **Tamper-Evident Golden Runs** create cryptographically verified evaluation bundles.
 
@@ -254,7 +254,7 @@ if st.button("Run Evaluation", type="primary", use_container_width=True):
                     responses=responses
                 )
             
-            st.success("🔐 Attestation Generated")
+            st.success("Attestation Generated")
             
             # Display attestation info
             col1, col2 = st.columns(2)
@@ -274,7 +274,7 @@ OS: {env.os_name}
 {git_info}
 Meridian: {attestation.meridian_version}""")
             
-            st.info(f"📁 Bundle saved to: `data/results/{result.run_id}/`")
+            st.info(f"Bundle saved to: data/results/{result.run_id}/")
             st.caption("Verify with: `python -m meridian.cli verify --id " + result.run_id + "`")
         
         st.markdown("---")
