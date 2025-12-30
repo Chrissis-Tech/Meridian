@@ -40,12 +40,12 @@ def certify_suite_run(run_id: str) -> SuiteCertification:
     atm = AttestationManager()
     
     # Load run data
-    run_dir = am.results_dir / run_id
+    run_dir = am.base_dir / run_id
     if not run_dir.exists():
         raise ValueError(f"Run not found: {run_id}")
     
     # Check attestation
-    verification = atm.verify(run_id)
+    is_valid, _ = atm.verify(run_id)
     
     # Load metrics
     metrics_file = run_dir / "metrics.json"
@@ -93,7 +93,7 @@ def certify_suite_run(run_id: str) -> SuiteCertification:
         timestamp=timestamp,
         attestation_hash=attestation_hash,
         badge_hash=badge_hash,
-        verified=verification.valid
+        verified=is_valid
     )
 
 
