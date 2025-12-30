@@ -201,29 +201,7 @@ if st.button("Run Evaluation", type="primary", use_container_width=True):
         from meridian.types import RunConfig
         from meridian.config import SUITES_DIR
         import tempfile
-        
-        # Handle custom vs built-in suites
-        if is_custom_suite:
-            # Load custom suite from database and export to temp file
-            from meridian.suites.custom import get_custom_suite_manager
-            manager = get_custom_suite_manager()
-            pack = manager.get_by_name(suite_name)
-            
-            if not pack:
-                st.error(f"Custom suite '{suite_name}' not found")
-                st.stop()
-            
-            # Create temp JSONL file
-            temp_file = tempfile.NamedTemporaryFile(
-                mode='w', suffix='.jsonl', delete=False, encoding='utf-8'
-            )
-            temp_file.write(pack.to_jsonl())
-            temp_file.close()
-            suite_path = Path(temp_file.name)
-            
-            st.info(f"Running custom suite: {len(pack.tests)} tests")
-        else:
-            suite_path = SUITES_DIR / f"{suite_name}.jsonl"
+        import json
         
         runner = SuiteRunner()
         config = RunConfig(
@@ -232,32 +210,108 @@ if st.button("Run Evaluation", type="primary", use_container_width=True):
             max_tokens=max_tokens,
         )
         
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        
-        def update_progress(current, total):
-            progress_bar.progress(current / total)
-            status_text.text(f"Running: {current}/{total} tests")
-        
-        with st.spinner(f"Running {suite_name} with {model_id}..."):
-            result = runner.run_suite(
-                str(suite_path),
+        # Handle custom vs built-in suites
+        if is_custom_suite:
+            from meridian.suites.custom import get_custom_suite_manager
+            from dataclasses import asdict
+            
+            manager = get_custom_suite_manager()
+            pack = manager.get_by_name(suite_name)
+            
+            if not pack:
+                st.error(f"Custom suite '{suite_name}' not found")
+                st.stop()
+            
+            # Get holdout split
+            dev_tests, holdout_tests = pack.get_holdout_split()
+            
+            st.info(f"Running custom suite: {len(dev_tests)} dev + {len(holdout_tests)} holdout tests")
+            
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            # Run DEV set
+            status_text.text(f"Running Dev set ({len(dev_tests)} tests)...")
+            dev_file = tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False, encoding='utf-8')
+            for t in dev_tests:
+                dev_file.write(json.dumps(asdict(t), ensure_ascii=False) + "\n")
+            dev_file.close()
+            
+            dev_result = runner.run_suite(
+                dev_file.name,
                 model_id=model_id,
                 run_config=config,
-                progress_callback=update_progress
             )
-        
-        progress_bar.progress(1.0)
-        status_text.empty()
-        
-        # Display results
-        st.success(f"Completed: {result.passed_tests}/{result.total_tests} passed")
-        
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Accuracy", f"{result.accuracy:.1%}")
-        col2.metric("Passed", result.passed_tests)
-        col3.metric("Failed", result.failed_tests)
-        col4.metric("Latency", f"{result.mean_latency_ms:.0f}ms")
+            progress_bar.progress(0.5)
+            
+            # Run HOLDOUT set
+            status_text.text(f"Running Holdout set ({len(holdout_tests)} tests)...")
+            holdout_file = tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False, encoding='utf-8')
+            for t in holdout_tests:
+                holdout_file.write(json.dumps(asdict(t), ensure_ascii=False) + "\n")
+            holdout_file.close()
+            
+            holdout_result = runner.run_suite(
+                holdout_file.name,
+                model_id=model_id,
+                run_config=config,
+            )
+            progress_bar.progress(1.0)
+            status_text.empty()
+            
+            # Display BOTH results
+            st.success(f"Completed: Dev {dev_result.passed_tests}/{dev_result.total_tests} | Holdout {holdout_result.passed_tests}/{holdout_result.total_tests}")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Dev Accuracy", f"{dev_result.accuracy:.1%}")
+            col2.metric("Holdout Accuracy", f"{holdout_result.accuracy:.1%}", 
+                       delta=f"{(holdout_result.accuracy - dev_result.accuracy)*100:+.1f}pp" if dev_result.accuracy else None)
+            col3.metric("Total Passed", dev_result.passed_tests + holdout_result.passed_tests)
+            col4.metric("Latency", f"{(dev_result.mean_latency_ms + holdout_result.mean_latency_ms)/2:.0f}ms")
+            
+            # Warning if holdout much worse than dev (overfitting signal)
+            if dev_result.accuracy > 0 and holdout_result.accuracy < dev_result.accuracy * 0.8:
+                st.warning("Holdout accuracy significantly lower than Dev. This may indicate overfitting to your test cases.")
+            
+            # Use holdout result for attestation (the "real" score)
+            result = holdout_result
+            result.suite_name = suite_name  # Override temp filename
+            
+            # Create combined temp for attestation
+            suite_path = tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False, encoding='utf-8')
+            suite_path.write(pack.to_jsonl())
+            suite_path.close()
+            suite_path = Path(suite_path.name)
+            
+        else:
+            suite_path = SUITES_DIR / f"{suite_name}.jsonl"
+            
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            def update_progress(current, total):
+                progress_bar.progress(current / total)
+                status_text.text(f"Running: {current}/{total} tests")
+            
+            with st.spinner(f"Running {suite_name} with {model_id}..."):
+                result = runner.run_suite(
+                    str(suite_path),
+                    model_id=model_id,
+                    run_config=config,
+                    progress_callback=update_progress
+                )
+            
+            progress_bar.progress(1.0)
+            status_text.empty()
+            
+            # Display results (built-in suites - no holdout split)
+            st.success(f"Completed: {result.passed_tests}/{result.total_tests} passed")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Accuracy", f"{result.accuracy:.1%}")
+            col2.metric("Passed", result.passed_tests)
+            col3.metric("Failed", result.failed_tests)
+            col4.metric("Latency", f"{result.mean_latency_ms:.0f}ms")
         
         if result.accuracy_ci:
             st.info(f"95% CI: [{result.accuracy_ci[0]:.1%}, {result.accuracy_ci[1]:.1%}]")
