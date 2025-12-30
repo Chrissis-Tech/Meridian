@@ -52,7 +52,8 @@ Meridian takes a different approach:
 - **Interpretability** — Attention visualization, logit lens, causal tracing
 - **Security Testing** — Prompt injection, jailbreak, reward hacking
 - **CI/CD Integration** — GitHub Actions for automated regression prevention
-- **🔐 Tamper-Evident Attestation** — Cryptographic proof of evaluation results
+- **Tamper-Evident Attestation** — Cryptographic proof of evaluation results
+- **Provider Certification** — 14-test validation suite for adapter reliability
 
 ## Quick Start
 
@@ -150,12 +151,28 @@ All results are **cryptographically attested** and verifiable. [Learn how](docs/
 |----------|-------------|
 | [docs/METHODOLOGY.md](docs/METHODOLOGY.md) | How suites are designed and scored |
 | [docs/FAILURE_EXAMPLES.md](docs/FAILURE_EXAMPLES.md) | Real model outputs and why they failed |
+| [docs/CERTIFICATION.md](docs/CERTIFICATION.md) | Provider certification (14 tests) |
 | [docs/USE_CASES.md](docs/USE_CASES.md) | Real-world usage examples |
 | [docs/PROVIDERS.md](docs/PROVIDERS.md) | Provider matrix and setup |
 | [docs/whitepaper.md](docs/whitepaper.md) | Theoretical foundations |
 | [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) | Security coverage and limitations |
 | [REPRODUCIBILITY.md](REPRODUCIBILITY.md) | How to reproduce results |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
+
+## Certified Providers
+
+All adapters are verified with 14 standardized tests. [Full certification docs](docs/CERTIFICATION.md)
+
+| Provider | Score | Tests | Latency | Badge |
+|----------|-------|-------|---------|-------|
+| DeepSeek Chat | 100% | 14/14 | 1819ms | ![deepseek](https://img.shields.io/badge/meridian-certified%20100%25-brightgreen) |
+| OpenAI GPT-4 | 100% | 14/14 | 864ms | ![gpt4](https://img.shields.io/badge/meridian-certified%20100%25-brightgreen) |
+| Mistral Medium | 100% | 14/14 | 1715ms | ![mistral](https://img.shields.io/badge/meridian-certified%20100%25-brightgreen) |
+
+```bash
+# Certify any provider
+python -m meridian.cli certify --model <model_id> --save
+```
 
 ## CLI Commands
 
