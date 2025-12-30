@@ -359,6 +359,51 @@ def import_bundle(bundle: str, verify: bool):
 
 
 @main.command()
+@click.option("--model", "-m", required=True, help="Model ID to certify")
+@click.option("--output", "-o", help="Output directory for certification report")
+@click.option("--save", is_flag=True, help="Save certification report and badge")
+def certify(model: str, output: str, save: bool):
+    """Certify a provider adapter with standard tests."""
+    from .certification import certify_provider, save_certification, generate_badge_markdown
+    
+    click.echo(f"Certifying '{model}'...")
+    click.echo(f"Running 7 standard tests...\n")
+    
+    try:
+        cert = certify_provider(model)
+    except Exception as e:
+        click.echo(f"✗ Certification failed: {e}", err=True)
+        raise SystemExit(1)
+    
+    # Display results
+    click.echo(f"{'Test':<20} {'Status':<10} {'Message'}")
+    click.echo("-" * 60)
+    
+    for test in cert.tests:
+        status = "PASS" if test.passed else "FAIL"
+        symbol = "✓" if test.passed else "✗"
+        click.echo(f"{test.test_name:<20} {symbol} {status:<6} {test.message[:40]}")
+    
+    click.echo("-" * 60)
+    click.echo(f"\nScore: {cert.score}/100")
+    click.echo(f"Overall: {'CERTIFIED' if cert.overall_passed else 'NOT CERTIFIED'}")
+    click.echo(f"Badge hash: {cert.badge_hash}")
+    
+    if cert.overall_passed:
+        click.echo(f"\n✓ Provider '{model}' is certified")
+        click.echo(f"\nBadge: {generate_badge_markdown(cert)}")
+    else:
+        click.echo(f"\n✗ Provider '{model}' failed certification")
+    
+    if save:
+        from pathlib import Path
+        output_dir = Path(output) if output else None
+        report_path = save_certification(cert, output_dir)
+        click.echo(f"\nReport saved: {report_path}")
+        click.echo(f"Badge saved: {report_path.with_name(report_path.stem + '_badge.svg')}")
+
+
+@main.command()
 @click.option("--baseline", "-b", required=True, help="Baseline JSON file")
 @click.option("--suite", "-s", help="Specific suite to check")
 @click.option("--model", "-m", default="deepseek_chat", help="Model ID")
