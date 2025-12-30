@@ -89,6 +89,11 @@ providers = [
     "together>=0.2.0",
 ]
 
+signing = [
+    # For Ed25519 attestation signatures
+    "cryptography>=41.0.0",
+]
+
 sae = [
     # For Sparse Autoencoder training
     "einops>=0.7.0",
@@ -104,7 +109,7 @@ Documentation = "https://github.com/Chrissis-Tech/Meridian#readme"
 Repository = "https://github.com/Chrissis-Tech/Meridian"
 
 [tool.hatch.build.targets.wheel]
-packages = ["meridian", "core", "reports", "ui"]
+packages = ["meridian", "reports", "ui"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

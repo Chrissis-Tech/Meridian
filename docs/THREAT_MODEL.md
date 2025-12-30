@@ -1,166 +1,129 @@
-# Threat Model
+# Attestation Threat Model
 
-This document describes the security threats Meridian addresses, those it does not, and the assumptions underlying our security design.
+This document explicitly states what Meridian's attestation system protects against and what it does NOT protect against.
 
-## Scope
+## What Attestation DOES Protect
 
-Meridian is designed to evaluate LLM behavior, including resistance to adversarial attacks. This document covers:
+### 1. Bundle Tampering (Integrity)
+**Threat:** Someone modifies responses, config, or metrics after the run.
 
-1. Attacks against LLMs that Meridian can detect
-2. Attacks against Meridian itself
-3. Operational security considerations
+**Protection:** SHA256 hashes of all files in manifest.json. Any modification causes hash mismatch and verify fails.
 
----
-
-## 1. LLM Attack Detection
-
-### 1.1 Attacks Covered
-
-| Attack Type | Coverage | Test Suite | Detection Method |
-|-------------|----------|------------|------------------|
-| Prompt Injection | Partial | security_adversarial | Pattern matching, output validation |
-| Jailbreaking | Partial | security_adversarial | Refusal detection, policy violation |
-| Data Extraction | Partial | security_adversarial | Information leakage heuristics |
-| Format Breaking | Full | security_adversarial | Structured output validation |
-| Hallucination Induction | Partial | hallucination_control | Citation verification, refusal checks |
-| Reward Hacking | Partial | reward_hacking | Spoofing, length, citation, tool detection |
-
-### 1.2 Reward Hacking Definition
-
-**Reward hacking** = optimizing evaluation metrics without improving task truth or success.
-
-| Category | Description | Detection |
-|----------|-------------|-----------|
-| **Verifier spoofing** | Academic tone + wrong answer | Confidence phrases + error check |
-| **Length gaming** | Padding output to increase score | Word count + filler patterns |
-| **Citation laundering** | Fake citations with correct format | DOI/URL validation, pattern matching |
-| **Tool misuse** | Claiming tool access without it | Tool claim patterns vs. available tools |
-
-Meridian's `reward_hacking` suite (20 tests) evaluates resistance to these gaming behaviors.
-
-### 1.2 Attack Detection Limitations
-
-| Limitation | Impact | Mitigation |
-|------------|--------|------------|
-| Pattern-based detection | Novel attacks may bypass | Regular suite updates |
-| No semantic understanding | Subtle policy violations missed | Combine with human review |
-| English-only | Non-English attacks not covered | Extend suites for target languages |
-| Static payloads | Adaptive attacks not tested | Implement fuzzing extensions |
-
-### 1.3 Not Covered
-
-Meridian does **not** detect:
-
-- Model poisoning or backdoors
-- Training data extraction attacks
-- Timing-based side channels
-- Multimodal attacks (images, audio)
-- Coordinated multi-turn attacks
-
----
-
-## 2. Threats to Meridian
-
-### 2.1 Attack Surface
-
-```
-External Input → [Test Suites] → [Runner] → [Model API] → [Storage] → [UI/Reports]
+```bash
+python -m meridian.cli verify --id run_xxx
+# Output: ✗ Tampered file: responses/test_5.json
 ```
 
-### 2.2 Threat Matrix
+### 2. File Deletion/Addition (Completeness)
+**Threat:** Someone removes failing tests or adds fake passing tests.
 
-| Threat | Vector | Impact | Likelihood | Mitigation |
-|--------|--------|--------|------------|------------|
-| Malicious test suite | JSONL injection | Code execution | Low | Input validation, sandboxing |
-| API key exposure | Log files, artifacts | Credential theft | Medium | Redaction, gitignore |
-| Data exfiltration | Model outputs | Privacy breach | Medium | Output redaction |
-| DoS via expensive tests | Long prompts, many runs | Resource exhaustion | Medium | Rate limiting, timeouts |
-| Storage injection | SQL injection in results DB | Data corruption | Low | Parameterized queries |
+**Protection:** Manifest includes complete file list. Missing or extra files detected.
 
-### 2.3 Trust Boundaries
+### 3. Signer Identity (Authenticity) [v0.4+]
+**Threat:** Someone claims results came from a specific party.
 
-```
-┌─────────────────────────────────────────────────┐
-│                  Trusted Zone                   │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐  │
-│  │ Test     │    │ Core     │    │ Storage  │  │
-│  │ Suites   │───▶│ Runner   │───▶│ Layer    │  │
-│  └──────────┘    └──────────┘    └──────────┘  │
-└─────────────────────────────────────────────────┘
-         │                │
-         ▼                ▼
-┌─────────────────────────────────────────────────┐
-│            Untrusted Zone                       │
-│  ┌──────────┐    ┌──────────┐                   │
-│  │ External │    │ Model    │                   │
-│  │ Models   │    │ Outputs  │                   │
-│  └──────────┘    └──────────┘                   │
-└─────────────────────────────────────────────────┘
+**Protection:** Ed25519 digital signature. If bundle is signed:
+- Signature proves holder of private key created/approved the bundle
+- Public key can be verified against known identity
+
+```bash
+python -m meridian.cli verify --id run_xxx --key org_public.pub
+# Output: ✓ Valid signature from key abc12345
 ```
 
-### 2.4 Security Controls
+### 4. Environment Drift Detection
+**Threat:** Results differ due to different Python/OS/dependencies.
 
-| Control | Implementation | Status |
-|---------|----------------|--------|
-| Input validation | JSON schema for test suites | Implemented |
-| Output redaction | PII pattern masking | Implemented |
-| API key protection | Environment variables, .gitignore | Implemented |
-| SQL injection prevention | Parameterized queries | Implemented |
-| Rate limiting | Configurable request limits | Planned |
-| Audit logging | Structured logs with timestamps | Partial |
+**Protection:** Environment captured at run time:
+- Python version
+- Platform
+- Git commit
+- Meridian version
 
----
+## What Attestation DOES NOT Protect
 
-## 3. Operational Security
+### 1. Remote Model Behavior ❌
+**Cannot prove:** That OpenAI/DeepSeek/Anthropic actually ran the model.
 
-### 3.1 Deployment Recommendations
+**Why:** We only see API responses. The remote provider could:
+- Route to a different model
+- Apply hidden filters
+- Change model weights between runs
 
-**Minimal Exposure:**
-- Run behind authentication (e.g., Streamlit password)
-- Do not expose to public internet without review
-- Use environment variables for all secrets
+**Mitigation:** Replay with drift detection can catch major changes.
 
-**Data Handling:**
-- Do not evaluate production data with PII
-- Enable redaction for sensitive deployments
-- Regularly purge old runs and artifacts
+### 2. Model Version/Weights ❌
+**Cannot prove:** The exact model weights used.
 
-**Access Control:**
-- Limit database access to application only
-- Review file permissions on artifacts directory
-- Use separate API keys for evaluation vs. production
+**Why:** API providers don't expose model checksums.
 
-### 3.2 Incident Response
+**Mitigation:** Capture model_id, timestamp, and compare with provider changelogs.
 
-If credentials are exposed:
-1. Rotate affected API keys immediately
-2. Review access logs for unauthorized usage
-3. Purge artifacts containing credentials
-4. Update .gitignore and redaction rules
+### 3. Local Faking ❌
+**Cannot prove:** That results weren't locally generated without calling the API.
 
----
+**Why:** Anyone with the private key can sign anything.
 
-## 4. Assumptions
+**Mitigation:** 
+- Trust based on key holder reputation
+- Cross-reference with API usage logs (if available)
+- Third-party attestation services (future)
 
-1. **Test suites are trusted:** Malicious test suites could execute arbitrary patterns
-2. **Local filesystem is secure:** Artifacts stored without encryption
-3. **Model APIs are reliable:** No protection against API unavailability
-4. **Single-user deployment:** No multi-tenant isolation
+### 4. Key Compromise ❌
+**Cannot protect:** Against stolen private keys.
 
----
+**If private key is compromised:**
+- Attacker can sign fake bundles
+- All previous signatures remain valid
 
-## 5. Future Security Work
+**Mitigation:**
+- Key rotation
+- Hardware security modules (HSM)
+- Multi-signature schemes (future)
 
-- [ ] Test suite sandboxing
-- [ ] Encrypted artifact storage
-- [ ] Multi-tenant isolation
-- [ ] Adversarial robustness testing for Meridian itself
-- [ ] Formal security audit
+### 5. Replay Attacks ❌
+**Cannot protect:** Against replaying old valid bundles as new.
 
----
+**Mitigation:** Check timestamps, maintain audit log of expected runs.
 
-## Contact
+## Trust Levels
 
-Report security issues to: security@Chrissis-Tech.com (or via GitHub Security Advisories)
+| Level | Protections | Use Case |
+|-------|-------------|----------|
+| **Basic** (default) | Integrity only | Internal reproducibility |
+| **Signed** | Integrity + Identity | Shared results, audits |
+| **Verified Replay** | Integrity + Fresh execution | CI gates, compliance |
 
-See SECURITY.md for vulnerability disclosure policy.
+## Verification Commands
+
+```bash
+# Basic integrity check
+python -m meridian.cli verify --id run_xxx
+
+# With signature verification
+python -m meridian.cli verify --id run_xxx --key signer.pub
+
+# Replay with drift detection
+python -m meridian.cli replay --id run_xxx --mode drift
+```
+
+## Summary
+
+| Threat | Protected? | Method |
+|--------|------------|--------|
+| File tampering | ✅ Yes | SHA256 hashes |
+| File deletion | ✅ Yes | Manifest completeness |
+| Signer identity | ✅ Yes | Ed25519 signature |
+| Environment drift | ⚠️ Detect | Captured metadata |
+| Remote model behavior | ❌ No | Cannot verify externally |
+| Model version | ❌ No | No checksum from providers |
+| Local faking | ❌ No | Trust-based |
+| Key compromise | ❌ No | Operational security |
+
+## Honest Statement
+
+> Meridian attestation proves **who ran what configuration** and **that results weren't modified**.
+> It does NOT prove **what the model actually did internally**.
+>
+> For API-based models, this is an inherent limitation of the threat model.
+> For local models, replay --strict provides stronger guarantees.

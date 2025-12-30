@@ -633,6 +633,125 @@ def serve(host: str, port: int):
         click.echo("FastAPI not installed. Run: pip install fastapi uvicorn", err=True)
 
 
+# =============================================================================
+# SIGNING COMMANDS
+# =============================================================================
+
+@main.command()
+@click.option("--name", "-n", default="default", help="Key name")
+def keygen(name: str):
+    """Generate Ed25519 signing key pair."""
+    from .storage.signing import get_signer
+    
+    signer = get_signer()
+    
+    if not signer.available:
+        click.echo("cryptography library not installed.", err=True)
+        click.echo("Run: pip install cryptography")
+        return
+    
+    # Check if exists
+    existing = signer.load_keypair(name)
+    if existing:
+        click.confirm(f"Key '{name}' already exists. Overwrite?", abort=True)
+    
+    key = signer.generate_keypair()
+    private_path, public_path = signer.save_keypair(key, name)
+    
+    click.echo(f"Key pair generated:")
+    click.echo(f"  Private key: {private_path} (keep secret!)")
+    click.echo(f"  Public key:  {public_path}")
+    click.echo(f"  Key ID:      {key.key_id}")
+    click.echo(f"\nPublish {public_path} for others to verify your attestations.")
+
+
+@main.command("sign")
+@click.option("--id", "-i", "run_id", required=True, help="Run ID to sign")
+@click.option("--key", "-k", default="default", help="Key name to use")
+def sign_cmd(run_id: str, key: str):
+    """Sign an attestation with Ed25519."""
+    from .storage.signing import get_signer
+    from .config import RESULTS_DIR
+    
+    signer = get_signer()
+    
+    if not signer.available:
+        click.echo("cryptography library not installed. Run: pip install cryptography", err=True)
+        return
+    
+    # Load key
+    signing_key = signer.load_keypair(key)
+    if not signing_key:
+        click.echo(f"Key '{key}' not found. Run: meridian keygen --name {key}", err=True)
+        return
+    
+    # Find attestation
+    attestation_path = RESULTS_DIR / run_id / "attestation.json"
+    if not attestation_path.exists():
+        click.echo(f"Attestation not found: {attestation_path}", err=True)
+        return
+    
+    # Sign
+    signer.sign_attestation(attestation_path, signing_key)
+    click.echo(f"Signed attestation for {run_id}")
+    click.echo(f"  Signer key ID: {signing_key.key_id}")
+
+
+@main.command()
+@click.option("--id", "-i", "run_id", required=True, help="Run ID")
+@click.option("--key", "-k", help="Public key file or key name")
+def verify(run_id: str, key: str):
+    """Verify attestation integrity (and signature if --key provided)."""
+    from .storage.attestation import get_attestation_manager
+    from .storage.signing import get_signer
+    from .config import RESULTS_DIR
+    import base64
+    
+    atm = get_attestation_manager()
+    
+    # Basic integrity check
+    is_valid, issues = atm.verify(run_id)
+    
+    if is_valid:
+        click.echo(f"Integrity: VALID")
+    else:
+        click.echo(f"Integrity: INVALID")
+        for issue in issues:
+            click.echo(f"  - {issue}")
+        return
+    
+    # Signature verification if key provided
+    if key:
+        signer = get_signer()
+        
+        if not signer.available:
+            click.echo("cryptography library not installed for signature verification", err=True)
+            return
+        
+        # Load public key
+        if Path(key).exists():
+            # From file
+            with open(key, 'r') as f:
+                import json
+                key_data = json.load(f)
+                public_key_bytes = base64.b64decode(key_data['public_key'])
+        else:
+            # From key name
+            key_data = signer.load_public_key(key)
+            if not key_data:
+                click.echo(f"Public key '{key}' not found", err=True)
+                return
+            public_key_bytes = base64.b64decode(key_data['public_key'])
+        
+        attestation_path = RESULTS_DIR / run_id / "attestation.json"
+        sig_valid, msg = signer.verify_attestation(attestation_path, public_key_bytes)
+        
+        if sig_valid:
+            click.echo(f"Signature: VALID - {msg}")
+        else:
+            click.echo(f"Signature: INVALID - {msg}")
+
+
 if __name__ == "__main__":
     main()
 
