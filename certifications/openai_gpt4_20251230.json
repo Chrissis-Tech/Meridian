@@ -1,20 +1,20 @@
 {
-  "provider_id": "deepseek",
-  "model_id": "deepseek_chat",
-  "timestamp": "2025-12-30T08:01:29.553696Z",
+  "provider_id": "openai",
+  "model_id": "openai_gpt4",
+  "timestamp": "2025-12-30T08:09:34.628231Z",
   "tests": [
     {
       "test_name": "connectivity",
       "passed": true,
       "message": "API connection successful",
-      "latency_ms": 2671.177899988834,
+      "latency_ms": 2719.4211000023643,
       "details": {}
     },
     {
       "test_name": "basic_generation",
       "passed": true,
       "message": "Basic math correct",
-      "latency_ms": 1427.5426999956835,
+      "latency_ms": 1393.3295000024373,
       "details": {
         "output": "4"
       }
@@ -23,7 +23,7 @@
       "test_name": "temperature_zero",
       "passed": true,
       "message": "Temperature 0 supported",
-      "latency_ms": 2282.9467999981716,
+      "latency_ms": 1124.9412000033772,
       "details": {}
     },
     {
@@ -32,29 +32,29 @@
       "message": "Deterministic at temperature 0",
       "latency_ms": 0.0,
       "details": {
-        "output": "the capital of france is **paris**."
+        "output": "paris."
       }
     },
     {
       "test_name": "latency",
       "passed": true,
-      "message": "Average latency: 1980ms",
-      "latency_ms": 1979.7488333376048,
+      "message": "Average latency: 1247ms",
+      "latency_ms": 1246.7217333420801,
       "details": {
         "latencies": [
-          1843.6369999981252,
-          2050.6081000057748,
-          2045.001400008914
+          1078.0281000043033,
+          1952.1228000085102,
+          710.0143000134267
         ]
       }
     },
     {
       "test_name": "max_tokens",
       "passed": true,
-      "message": "Max tokens respected (~7 tokens)",
+      "message": "Max tokens respected (~12 tokens)",
       "latency_ms": 0.0,
       "details": {
-        "output_length": 28
+        "output_length": 50
       }
     },
     {
@@ -67,14 +67,14 @@
   ],
   "overall_passed": true,
   "score": 100,
-  "badge_hash": "618430d2f0e98a7d",
+  "badge_hash": "a91331a8d2a50695",
   "environment": {
     "python_version": "3.14.0",
     "platform": "Windows-11-10.0.26100-SP0",
     "os_name": "Windows",
     "meridian_version": "0.4.0",
     "git_commit": "5f5f248a679d",
-    "git_dirty": false,
-    "timestamp": "2025-12-30T08:01:29.784195Z"
+    "git_dirty": true,
+    "timestamp": "2025-12-30T08:09:34.871332Z"
   }
 }
