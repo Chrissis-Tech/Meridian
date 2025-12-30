@@ -1,213 +1,204 @@
 # Custom Test Suites
 
-This guide explains how to create your own test suites for Meridian.
+Create and run your own evaluation suites to test model performance on prompts that matter to your use case.
 
 ## Quick Start
 
-1. Create a `.jsonl` file in the `suites/` directory
-2. Add a header line with suite metadata
-3. Add test cases, one per line
-4. Run with: `python -m core.cli run --suite your_suite_name --model deepseek_chat`
+### Option 1: UI Upload (Recommended)
+
+1. Go to **Create Suite** page
+2. Click **"Create Demo Suite"** for a sample, or upload your own JSONL/CSV
+3. Validate and save
+4. Go to **Run Suite** → select `[Custom] your_suite_name`
+
+### Option 2: CLI
+
+```bash
+# Create suite file
+cat > suites/my_suite.jsonl << EOF
+{"id": "t1", "input": "What is 2+2?", "expected": "4", "scorer": "exact"}
+{"id": "t2", "input": "Capital of France?", "expected": "Paris", "scorer": "contains"}
+EOF
+
+# Run
+python -m meridian.cli run --suite my_suite --model deepseek_chat --attest
+```
 
 ## File Format
 
-Test suites are **JSONL** files (JSON Lines). Each line is a separate JSON object.
-
-### Line 1: Suite Header
-
-```json
-{"suite_name": "my_custom_suite", "description": "What this suite tests", "version": "1.0.0"}
-```
-
-### Lines 2+: Test Cases
-
-```json
-{"id": "TEST-001", "prompt": "Your prompt here", "expected": {"type": "contains", "required_words": ["answer"]}}
-```
-
-## Expected Answer Types
-
-### 1. Contains (most common)
-Check if output contains specific words:
-
-```json
-{
-  "id": "MATH-001",
-  "prompt": "What is 7 + 8?",
-  "expected": {
-    "type": "contains",
-    "required_words": ["15"]
-  }
-}
-```
-
-### 2. Exact Match
-Output must exactly match:
-
-```json
-{
-  "id": "FORMAT-001",
-  "prompt": "Reply with only 'APPROVED' or 'REJECTED'",
-  "expected": {
-    "type": "exact",
-    "value": "APPROVED"
-  }
-}
-```
-
-### 3. Regex Pattern
-Output must match a regex:
-
-```json
-{
-  "id": "DATE-001",
-  "prompt": "What is today's date? Format: YYYY-MM-DD",
-  "expected": {
-    "type": "regex",
-    "pattern": "\\d{4}-\\d{2}-\\d{2}"
-  }
-}
-```
-
-### 4. Length Constraint
-Limit response length:
-
-```json
-{
-  "id": "CONCISE-001",
-  "prompt": "Summarize this in one sentence.",
-  "expected": {
-    "type": "length",
-    "max_sentences": 1
-  }
-}
-```
-
-### 5. JSON Schema
-Validate structured output:
-
-```json
-{
-  "id": "JSON-001",
-  "prompt": "Return a JSON object with 'name' and 'age' fields.",
-  "expected": {
-    "type": "json_schema",
-    "schema": {
-      "type": "object",
-      "required": ["name", "age"],
-      "properties": {
-        "name": {"type": "string"},
-        "age": {"type": "integer"}
-      }
-    }
-  }
-}
-```
-
-## Complete Example
-
-Create `suites/my_company_tests.jsonl`:
+### Simple Format (UI Upload)
 
 ```jsonl
-{"suite_name": "my_company_tests", "description": "Tests for our specific use case", "version": "1.0.0"}
-{"id": "SUPPORT-001", "prompt": "Customer says: 'My order #12345 hasn't arrived.' Extract the order number.", "expected": {"type": "contains", "required_words": ["12345"]}}
-{"id": "SUPPORT-002", "prompt": "Customer says: 'I want a refund for my broken laptop.' What is the issue type? Reply with only: REFUND, EXCHANGE, or SUPPORT", "expected": {"type": "exact", "value": "REFUND"}}
-{"id": "SUPPORT-003", "prompt": "Summarize this ticket in under 20 words: 'I purchased item SKU-789 on Monday and it arrived damaged. The screen has a crack. I need a replacement ASAP.'", "expected": {"type": "length", "max_words": 20}}
+{"id": "math_1", "input": "What is 2+2?", "expected": "4", "scorer": "exact"}
+{"id": "translate_1", "input": "Translate 'hello' to Spanish", "expected": "hola", "scorer": "contains"}
+{"id": "essay_1", "input": "Write about AI ethics", "scorer": "llm_judge", "rubric": "Score 1-5 on clarity"}
 ```
 
-## Running Your Suite
+### CSV Format
 
-### CLI
-```bash
-python -m core.cli run --suite my_company_tests --model deepseek_chat
+```csv
+id,input,expected,scorer
+math_1,"What is 2+2?",4,exact
+translate_1,"Translate 'hello' to Spanish",hola,contains
 ```
 
-### UI
-1. Go to "Run Suite" page
-2. Your suite appears in the dropdown
-3. Select model and run
+## Fields
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `input` or `prompt` | Yes | The prompt to send to the model |
+| `expected` or `answer` | No* | The expected response |
+| `id` | No | Unique identifier (auto-generated if missing) |
+| `scorer` | No | Scoring method (default: `exact`) |
+| `rubric` | Only for llm_judge | Evaluation criteria |
+| `tags` | No | Comma-separated tags for filtering |
+
+*Required unless using `llm_judge` scorer.
+
+## Scorers
+
+| Scorer | Description | Example |
+|--------|-------------|---------|
+| `exact` | Output must exactly match expected | `"4"` matches `"4"` |
+| `contains` | Output must contain expected | `"hola"` in `"hola, amigo"` |
+| `regex` | Output must match regex pattern | `\d+` matches any number |
+| `llm_judge` | LLM evaluates output against rubric | Subjective/open-ended |
+
+## Dev/Holdout Split
+
+Custom suites automatically use **80/20 holdout split** to prevent overfitting:
+
+```
+Running custom suite: 8 dev + 2 holdout tests
+
+Completed: Dev 7/8 | Holdout 2/2
+
++------------------+--------------------+---------------+---------+
+| Dev Accuracy     | Holdout Accuracy   | Total Passed  | Latency |
+| 87.5%            | 100.0% (+12.5pp)   | 9             | 1230ms  |
++------------------+--------------------+---------------+---------+
+```
+
+### Why Holdout Matters
+
+- **Dev set (80%)**: Use this to iterate and improve your prompts
+- **Holdout set (20%)**: The "real" score - not seen during development
+- **Overfitting warning**: If Holdout << Dev, you may have over-optimized
+- **Certification uses Holdout**: The badge shows the holdout accuracy, not dev
+
+The holdout split uses a fixed seed (42) for reproducibility.
+
+## Validation Features
+
+### Leak Detection
+
+If your prompt contains the expected answer:
+
+```
+LEAK WARNING: Test 'math_1' input contains expected answer
+```
+
+This prevents accidentally "testing" the model by giving it the answer in the question.
+
+### LLM Judge Safety
+
+If using `llm_judge` scorer without a rubric:
+
+```
+Test 'essay_1' uses llm_judge but missing 'rubric'
+```
+
+### Smart Suggestions
+
+- Empty expected → suggest `llm_judge` with rubric
+- Expected looks like JSON → suggest `json_schema` scorer
+
+## Versioning
+
+Suites support automatic versioning:
+
+- First save: `v1`
+- Re-upload with same name: automatically becomes `v2`, `v3`, etc.
+- Version displayed in UI and reports
+
+## Storage
+
+Custom suites are stored in SQLite database:
+
+```
+data/custom_suites.db
+```
+
+Export to JSONL via UI for:
+- Sharing with teammates
+- Version control (git)
+- CLI usage
+
+## Complete Workflow
+
+```
+1. Create Suite     →  Upload 30 test cases
+2. Validate         →  Fix any leak warnings
+3. Run Suite        →  Dev: 70% | Holdout: 75%
+4. Improve prompts  →  Based on Dev failures
+5. Run Again        →  Dev: 85% | Holdout: 78%
+6. Certify          →  Get badge: "78% verified"
+```
+
+The certification badge uses the **holdout accuracy** - preventing gaming.
+
+## Advanced: Full Schema (for CLI)
+
+For complex test cases with the full runner schema:
+
+```jsonl
+{"suite_name": "my_suite", "description": "My tests", "version": "1.0.0"}
+{"id": "TEST-001", "prompt": "Your prompt", "expected": {"type": "contains", "required_words": ["answer"]}}
+{"id": "TEST-002", "prompt": "Format check", "expected": {"type": "regex", "pattern": "\\d{4}-\\d{2}-\\d{2}"}}
+```
+
+### Expected Types (Advanced)
+
+```json
+{"type": "contains", "required_words": ["word1", "word2"]}
+{"type": "exact", "value": "APPROVED"}
+{"type": "regex", "pattern": "\\d+"}
+{"type": "length", "max_words": 50, "max_sentences": 3}
+{"type": "json_schema", "schema": {"type": "object", "required": ["name"]}}
+```
 
 ## Best Practices
 
-### 1. Use Clear Test IDs
-```
-GOOD: SUPPORT-001, EXTRACTION-042, FORMAT-TEST-12
-BAD:  test1, t, abc
-```
+### 1. Start Small
+Begin with 10-20 tests covering your most important cases.
 
-### 2. Add Tags for Filtering
-```json
-{"id": "X", "prompt": "...", "expected": {...}, "tags": ["extraction", "customer_support"]}
-```
+### 2. Diverse Test Types
+Include:
+- Easy baseline tests (sanity check)
+- Hard edge cases (where you've seen failures)
+- Different output formats (JSON, lists, paragraphs)
 
-### 3. Keep Prompts Realistic
-Use actual examples from your production data (sanitized).
+### 3. Clear Expectations
+For `exact` scorer, be precise:
+- `"Yes"` won't match `"yes"` or `"Yes."`
+- Use `contains` for more flexibility
 
-### 4. Mix Difficulty Levels
-Include easy, medium, and hard cases to see where models struggle.
+### 4. Version Control
+Export JSONL and commit to git.
 
-### 5. Test Edge Cases
-- Empty inputs
-- Very long inputs
-- Ambiguous requests
-- Malformed data
-
-## Importing from CSV
-
-If you have tests in CSV format:
-
-```python
-import csv
-import json
-
-with open('tests.csv') as f:
-    reader = csv.DictReader(f)
-    
-    with open('suites/from_csv.jsonl', 'w') as out:
-        # Header
-        out.write(json.dumps({"suite_name": "from_csv", "description": "Imported from CSV"}) + '\n')
-        
-        for i, row in enumerate(reader):
-            test = {
-                "id": f"CSV-{i+1:03d}",
-                "prompt": row['prompt'],
-                "expected": {"type": "contains", "required_words": row['expected'].split(',')}
-            }
-            out.write(json.dumps(test) + '\n')
-```
-
-## Validating Your Suite
-
-Check for errors before running:
-
-```bash
-python -c "
-from core.suites import SuiteLoader
-loader = SuiteLoader()
-suite = loader.load_suite('suites/my_company_tests.jsonl')
-print(f'Loaded {len(suite.test_cases)} tests')
-for tc in suite.test_cases[:3]:
-    print(f'  - {tc.id}: {tc.prompt[:50]}...')
-"
-```
+### 5. Watch the Holdout
+If your holdout score drops significantly over iterations, you're overfitting. Consider adding more diverse test cases.
 
 ## FAQ
 
-**Q: Where do I put my files?**
-A: In the `suites/` directory, with `.jsonl` extension.
+**Q: Where are my suites stored?**
+A: UI uploads go to SQLite (`data/custom_suites.db`). CLI suites go to `suites/` folder.
 
 **Q: How many tests should I have?**
-A: At least 10 for statistical significance. 30-50 is ideal.
+A: At least 10. The holdout split works best with 20+.
 
-**Q: Can I use my own scoring logic?**
-A: Yes, extend `core/scoring/methods.py` with custom scorers.
+**Q: Can I disable holdout split?**
+A: Not in UI. For CLI, use built-in suites which run all tests together.
 
-**Q: How do I test multi-turn conversations?**
-A: Currently single-turn only. Multi-turn support coming in v0.4.
-
----
-
-For more examples, see the existing suites in `suites/`:
-- `rag_evaluation.jsonl` - Document retrieval
-- `code_analysis.jsonl` - Code review
-- `business_analysis.jsonl` - Financial calculations
+**Q: How do I share a suite?**
+A: Export as JSONL from UI, then share the file or commit to git.

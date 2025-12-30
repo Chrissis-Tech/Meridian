@@ -44,6 +44,7 @@ Meridian takes a different approach:
 ## Features
 
 - **18 Production Test Suites** — RAG, code analysis, document processing, business metrics
+- **Custom Suites** — Upload your own prompts with Dev/Holdout split to prevent overfitting
 - **Statistical Rigor** — Bootstrap confidence intervals, p-values, effect sizes
 - **REST API** — Full API with FastAPI for CI/CD integration
 - **Playground UI** — Test custom prompts with LLM Judge
@@ -149,6 +150,7 @@ All results are **cryptographically attested** and verifiable. [Learn how](docs/
 
 | Document | Description |
 |----------|-------------|
+| [docs/CUSTOM_SUITES.md](docs/CUSTOM_SUITES.md) | Create your own suites with Dev/Holdout split |
 | [docs/METHODOLOGY.md](docs/METHODOLOGY.md) | How suites are designed and scored |
 | [docs/FAILURE_EXAMPLES.md](docs/FAILURE_EXAMPLES.md) | Real model outputs and why they failed |
 | [docs/CERTIFICATION.md](docs/CERTIFICATION.md) | Provider certification (14 tests) |
