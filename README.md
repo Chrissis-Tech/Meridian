@@ -52,6 +52,7 @@ Meridian takes a different approach:
 - **Interpretability** — Attention visualization, logit lens, causal tracing
 - **Security Testing** — Prompt injection, jailbreak, reward hacking
 - **CI/CD Integration** — GitHub Actions for automated regression prevention
+- **🔐 Tamper-Evident Attestation** — Cryptographic proof of evaluation results
 
 ## Quick Start
 
@@ -79,13 +80,13 @@ streamlit run ui/app.py
 ### Run Suite — Execute Evaluations
 ![Run Suite](docs/screenshots/02_run_suite.png)
 
-### Results — Statistical Analysis
+### Results — Detailed Analysis
 ![Results](docs/screenshots/03_results.png)
 
-### Compare — A/B Testing
+### Compare — Model Comparison
 ![Compare](docs/screenshots/04_compare.png)
 
-### Explain — Interpretability Analysis
+### Explain — Interpretability
 ![Explain](docs/screenshots/05_explain.png)
 
 ## Test Suites
@@ -145,6 +146,9 @@ Tested with DeepSeek Chat (`deepseek_chat`) · v0.4.0 · [Golden run artifact](g
 # Run a suite
 python -m meridian.cli run --suite <name> --model <id>
 
+# Run with attestation (tamper-evident bundle)
+python -m meridian.cli run --suite <name> --model <id> --attest
+
 # Check against baseline
 python -m meridian.cli check --baseline <file> --model <id>
 
@@ -161,6 +165,28 @@ python -m meridian.cli serve --port 8000
 python -m meridian.cli list-suites
 python -m meridian.cli list-models
 ```
+
+### 🔐 Attestation Commands
+
+```bash
+# Verify attestation integrity
+python -m meridian.cli verify --id <run_id>
+
+# Replay a run (strict mode for local, drift for APIs)
+python -m meridian.cli replay --id <run_id> --mode drift
+
+# Export portable bundle
+python -m meridian.cli export --id <run_id>
+
+# Import and verify bundle
+python -m meridian.cli import --bundle <file.zip>
+```
+
+**What Attestation Does:**
+- **SHA256 hashing** of all run artifacts (responses, config, suite)
+- **Environment capture** (Python version, OS, git commit)
+- **Secret redaction** (API keys never stored)
+- **Tamper detection** (any modification fails verification)
 
 > **Note**: `python -m core.cli` still works but is deprecated. Use `meridian.cli` instead.
 

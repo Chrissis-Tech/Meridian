@@ -12,6 +12,12 @@ from .jsonl import (
     load_results_jsonl,
 )
 from .artifacts import ArtifactManager, get_artifact_manager
+from .attestation import (
+    AttestationManager,
+    Attestation,
+    EnvironmentInfo,
+    get_attestation_manager,
+)
 
 __all__ = [
     # Database
@@ -27,4 +33,9 @@ __all__ = [
     # Artifacts
     "ArtifactManager",
     "get_artifact_manager",
+    # Attestation
+    "AttestationManager",
+    "Attestation",
+    "EnvironmentInfo",
+    "get_attestation_manager",
 ]

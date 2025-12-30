@@ -135,12 +135,52 @@ with col2:
 with col3:
     num_runs = st.number_input("Runs (for consistency)", 1, 5, 1)
 
+# Attestation section
+st.markdown("---")
+st.subheader("🔐 Tamper-Evident Attestation")
+
+col1, col2 = st.columns([1, 3])
+with col1:
+    enable_attestation = st.checkbox("Enable Attestation", value=False)
+
+with col2:
+    with st.expander("ℹ️ What is Attestation?"):
+        st.markdown("""
+**Tamper-Evident Golden Runs** create cryptographically verified evaluation bundles.
+
+**What it does:**
+- Generates SHA256 hashes of all run artifacts
+- Captures environment info (Python, OS, git commit)
+- Creates a verifiable manifest
+- Detects any modifications to results
+
+**Bundle structure:**
+```
+results/run_xxx/
+├── manifest.json      # Hashes of all files
+├── config.json        # Run parameters (secrets redacted)
+├── suite.jsonl        # Dataset snapshot
+├── responses/         # Raw model outputs
+└── attestation.json   # Verification metadata
+```
+
+**CLI verification:**
+```bash
+python -m meridian.cli verify --id <run_id>
+```
+
+**Use cases:**
+- Compliance audits
+- Reproducibility proof
+- Model evaluation evidence
+""")
+
 # Run button
 if st.button("Run Evaluation", type="primary", use_container_width=True):
     try:
-        from core.runner import SuiteRunner
-        from core.types import RunConfig
-        from core.config import SUITES_DIR
+        from meridian.runner import SuiteRunner
+        from meridian.types import RunConfig
+        from meridian.config import SUITES_DIR
         
         suite_path = SUITES_DIR / f"{suite_name}.jsonl"
         
@@ -181,6 +221,62 @@ if st.button("Run Evaluation", type="primary", use_container_width=True):
         if result.accuracy_ci:
             st.info(f"95% CI: [{result.accuracy_ci[0]:.1%}, {result.accuracy_ci[1]:.1%}]")
         
+        # Generate attestation if enabled
+        if enable_attestation:
+            st.markdown("---")
+            with st.spinner("Generating attestation bundle..."):
+                from meridian.storage.attestation import get_attestation_manager
+                from meridian.storage.jsonl import load_test_suite
+                from dataclasses import asdict
+                
+                attester = get_attestation_manager()
+                
+                # Load suite data
+                test_suite = load_test_suite(suite_path)
+                suite_dicts = [asdict(tc) for tc in test_suite.test_cases]
+                
+                # Convert results to dicts
+                responses = [asdict(r) for r in result.results]
+                
+                # Create config dict
+                config_dict = {
+                    'suite': suite_name,
+                    'model': model_id,
+                    'temperature': temperature,
+                    'max_tokens': max_tokens,
+                    'run_id': result.run_id,
+                }
+                
+                attestation = attester.create_attestation(
+                    run_id=result.run_id,
+                    config=config_dict,
+                    suite_data=suite_dicts,
+                    responses=responses
+                )
+            
+            st.success("🔐 Attestation Generated")
+            
+            # Display attestation info
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Hashes:**")
+                st.code(f"""Manifest: {attestation.manifest_hash[:24]}...
+Config:   {attestation.config_hash[:24]}...
+Suite:    {attestation.suite_hash[:24]}...
+Responses:{attestation.responses_hash[:24]}...""")
+            
+            with col2:
+                st.markdown("**Environment:**")
+                env = attestation.environment
+                git_info = f"Git: {env.git_commit}" + (" (dirty)" if env.git_dirty else "") if env.git_commit else "Git: N/A"
+                st.code(f"""Python: {env.python_version}
+OS: {env.os_name}
+{git_info}
+Meridian: {attestation.meridian_version}""")
+            
+            st.info(f"📁 Bundle saved to: `data/results/{result.run_id}/`")
+            st.caption("Verify with: `python -m meridian.cli verify --id " + result.run_id + "`")
+        
         st.markdown("---")
         st.markdown(f"**Run ID:** `{result.run_id}`")
         st.markdown("View detailed results in the **Results** page.")
@@ -190,3 +286,4 @@ if st.button("Run Evaluation", type="primary", use_container_width=True):
         import traceback
         with st.expander("See full error"):
             st.code(traceback.format_exc())
+

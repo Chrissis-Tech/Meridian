@@ -2,6 +2,8 @@
 Meridian Core Package
 """
 
+__version__ = "0.4.0"
+
 from .types import (
     TestCase,
     TestSuite,

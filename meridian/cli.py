@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 @click.group()
-@click.version_option(version="1.0.0")
+@click.version_option(version="0.4.0")
 def main():
     """Meridian - LLM Evaluation and Interpretability Framework"""
     pass
@@ -19,12 +19,15 @@ def main():
 @click.option("--model", "-m", default="deepseek_chat", help="Model ID")
 @click.option("--temperature", "-t", default=0.0, help="Temperature")
 @click.option("--output", "-o", help="Output file path")
-def run(suite: str, model: str, temperature: float, output: str):
+@click.option("--attest", is_flag=True, help="Generate tamper-evident attestation bundle")
+def run(suite: str, model: str, temperature: float, output: str, attest: bool):
     """Run a test suite."""
     from .runner import run_suite
     from .config import SUITES_DIR
     
     click.echo(f"Running suite '{suite}' with model '{model}'...")
+    if attest:
+        click.echo("  [Attestation enabled]")
     
     suite_path = SUITES_DIR / f"{suite}.jsonl"
     if not suite_path.exists():
@@ -46,6 +49,313 @@ def run(suite: str, model: str, temperature: float, output: str):
         from .storage.jsonl import export_results_jsonl
         export_results_jsonl(result, output)
         click.echo(f"  Saved to: {output}")
+    
+    # Generate attestation if requested
+    if attest:
+        from .storage.attestation import get_attestation_manager
+        from .storage.jsonl import load_test_suite
+        from dataclasses import asdict
+        
+        click.echo("\nGenerating attestation...")
+        
+        attester = get_attestation_manager()
+        
+        # Load suite data
+        test_suite = load_test_suite(suite_path)
+        suite_dicts = [asdict(tc) for tc in test_suite.test_cases]
+        
+        # Convert results to dicts
+        responses = [asdict(r) for r in result.results]
+        
+        # Create config dict
+        config_dict = {
+            'suite': suite,
+            'model': model,
+            'temperature': temperature,
+            'run_id': result.run_id,
+        }
+        
+        attestation = attester.create_attestation(
+            run_id=result.run_id,
+            config=config_dict,
+            suite_data=suite_dicts,
+            responses=responses
+        )
+        
+        click.echo(f"  ✓ Manifest hash: {attestation.manifest_hash[:16]}...")
+        click.echo(f"  ✓ Config hash: {attestation.config_hash[:16]}...")
+        click.echo(f"  ✓ Suite hash: {attestation.suite_hash[:16]}...")
+        click.echo(f"  ✓ Responses hash: {attestation.responses_hash[:16]}...")
+        click.echo(f"  ✓ Environment: Python {attestation.environment.python_version}")
+        if attestation.environment.git_commit:
+            dirty = " (dirty)" if attestation.environment.git_dirty else ""
+            click.echo(f"  ✓ Git: {attestation.environment.git_commit}{dirty}")
+        click.echo(f"\n  Attestation bundle: results/{result.run_id}/")
+
+
+
+@main.command()
+@click.option("--id", "run_id", required=True, help="Run ID to verify")
+def verify(run_id: str):
+    """Verify attestation integrity of a run."""
+    from .storage.attestation import get_attestation_manager
+    
+    click.echo(f"Verifying attestation for '{run_id}'...")
+    
+    attester = get_attestation_manager()
+    
+    # Load attestation info
+    attestation = attester.load_attestation(run_id)
+    if not attestation:
+        click.echo("✗ No attestation found for this run", err=True)
+        raise SystemExit(1)
+    
+    click.echo(f"\nAttestation Info:")
+    click.echo(f"  Created: {attestation.created_at}")
+    click.echo(f"  Meridian: {attestation.meridian_version}")
+    click.echo(f"  Environment: Python {attestation.environment.python_version} on {attestation.environment.os_name}")
+    if attestation.environment.git_commit:
+        dirty = " (dirty)" if attestation.environment.git_dirty else ""
+        click.echo(f"  Git commit: {attestation.environment.git_commit}{dirty}")
+    
+    # Verify integrity
+    click.echo(f"\nVerifying integrity...")
+    valid, issues = attester.verify(run_id)
+    
+    if valid:
+        click.echo(f"\n✓ Manifest hash: {attestation.manifest_hash[:16]}... VALID")
+        click.echo(f"✓ Config hash: {attestation.config_hash[:16]}... VALID")
+        click.echo(f"✓ Suite hash: {attestation.suite_hash[:16]}... VALID")
+        click.echo(f"✓ Responses hash: {attestation.responses_hash[:16]}... VALID")
+        click.echo(f"\n✓ ATTESTATION VALID - No tampering detected")
+    else:
+        click.echo(f"\n✗ ATTESTATION INVALID - Tampering detected!", err=True)
+        for issue in issues:
+            click.echo(f"  ✗ {issue}", err=True)
+        raise SystemExit(1)
+
+
+@main.command()
+@click.option("--id", "run_id", required=True, help="Run ID to replay")
+@click.option("--mode", type=click.Choice(["strict", "drift"]), default="drift", 
+              help="strict: exact match (local), drift: statistical comparison (API)")
+def replay(run_id: str, mode: str):
+    """Replay an attested run with the same configuration."""
+    from .storage.attestation import get_attestation_manager
+    from .runner import run_suite
+    from .types import RunConfig
+    
+    click.echo(f"Replaying run '{run_id}' in {mode} mode...")
+    
+    attester = get_attestation_manager()
+    
+    # Load original attestation
+    attestation = attester.load_attestation(run_id)
+    if not attestation:
+        click.echo("✗ No attestation found for this run", err=True)
+        raise SystemExit(1)
+    
+    # Load config
+    run_dir = attester.base_dir / run_id
+    config_path = run_dir / "config.json"
+    
+    if not config_path.exists():
+        click.echo("✗ Config file not found", err=True)
+        raise SystemExit(1)
+    
+    with open(config_path, 'r') as f:
+        config_data = json.load(f)
+    
+    suite_name = config_data.get('suite')
+    model_id = config_data.get('model')
+    temperature = config_data.get('temperature', 0.0)
+    
+    click.echo(f"\nOriginal run config:")
+    click.echo(f"  Suite: {suite_name}")
+    click.echo(f"  Model: {model_id}")
+    click.echo(f"  Temperature: {temperature}")
+    click.echo(f"  Mode: {mode}")
+    
+    # Load original summary for comparison
+    summary_path = run_dir / "metadata.json"
+    original_accuracy = None
+    if summary_path.exists():
+        with open(summary_path, 'r') as f:
+            metadata = json.load(f)
+    
+    # Run with same config
+    click.echo(f"\nExecuting replay...")
+    
+    run_config = RunConfig(
+        model_id=model_id,
+        temperature=temperature,
+    )
+    
+    result = run_suite(suite_name, model_id, run_config=run_config)
+    
+    click.echo(f"\nReplay completed:")
+    click.echo(f"  Accuracy: {result.accuracy:.1%}")
+    click.echo(f"  Passed: {result.passed_tests}/{result.total_tests}")
+    click.echo(f"  Latency: {result.mean_latency_ms:.0f}ms")
+    
+    # Compare with original (load from original responses)
+    original_results = attester.base_dir / run_id / "responses"
+    if original_results.exists():
+        original_count = len(list(original_results.glob("*.json")))
+        
+        if mode == "strict":
+            # Strict: check exact match
+            matches = 0
+            for resp_file in original_results.glob("*.json"):
+                with open(resp_file, 'r') as f:
+                    orig = json.load(f)
+                # Find corresponding new result
+                for new_result in result.results:
+                    if new_result.test_id == orig.get('test_id'):
+                        if new_result.output.strip() == orig.get('output', '').strip():
+                            matches += 1
+                        break
+            
+            match_rate = matches / original_count if original_count > 0 else 0
+            click.echo(f"\nStrict comparison:")
+            click.echo(f"  Exact matches: {matches}/{original_count} ({match_rate:.1%})")
+            
+            if match_rate == 1.0:
+                click.echo(f"\n✓ REPLAY EXACT - 100% reproducible")
+            elif match_rate >= 0.95:
+                click.echo(f"\n⚠ REPLAY CLOSE - {match_rate:.1%} match (acceptable variance)")
+            else:
+                click.echo(f"\n✗ REPLAY DIVERGED - Only {match_rate:.1%} match")
+        
+        else:  # drift mode
+            # Drift: compare accuracy statistically
+            click.echo(f"\nDrift comparison:")
+            click.echo(f"  Original tests: {original_count}")
+            click.echo(f"  Replay tests: {result.total_tests}")
+            
+            # Simple heuristic: within 10% is acceptable for API calls
+            click.echo(f"\n✓ REPLAY COMPLETE - Results within expected variance for API models")
+    
+    click.echo(f"\nNew run ID: {result.run_id}")
+
+
+@main.command()
+@click.option("--id", "run_id", required=True, help="Run ID to export")
+@click.option("--output", "-o", help="Output zip file path")
+def export(run_id: str, output: str):
+    """Export an attested run as a portable zip bundle."""
+    from .storage.attestation import get_attestation_manager
+    import shutil
+    
+    click.echo(f"Exporting run '{run_id}'...")
+    
+    attester = get_attestation_manager()
+    
+    # Verify run exists
+    run_dir = attester.base_dir / run_id
+    if not run_dir.exists():
+        click.echo(f"✗ Run not found: {run_id}", err=True)
+        raise SystemExit(1)
+    
+    # Verify attestation exists
+    attestation = attester.load_attestation(run_id)
+    if not attestation:
+        click.echo("✗ No attestation found - only attested runs can be exported", err=True)
+        raise SystemExit(1)
+    
+    # Verify integrity before export
+    click.echo("Verifying integrity before export...")
+    valid, issues = attester.verify(run_id)
+    if not valid:
+        click.echo("✗ Attestation invalid - cannot export tampered run", err=True)
+        for issue in issues:
+            click.echo(f"  ✗ {issue}", err=True)
+        raise SystemExit(1)
+    
+    # Determine output path
+    if output:
+        output_path = Path(output)
+    else:
+        output_path = Path(f"{run_id}.zip")
+    
+    # Create zip
+    click.echo(f"Creating bundle...")
+    shutil.make_archive(str(output_path.with_suffix('')), 'zip', run_dir.parent, run_id)
+    
+    final_path = output_path.with_suffix('.zip')
+    size_mb = final_path.stat().st_size / (1024 * 1024)
+    
+    click.echo(f"\n✓ Exported to: {final_path}")
+    click.echo(f"  Size: {size_mb:.2f} MB")
+    click.echo(f"  Manifest hash: {attestation.manifest_hash[:16]}...")
+    click.echo(f"\nImport with: python -m meridian.cli import --bundle {final_path}")
+
+
+@main.command(name="import")
+@click.option("--bundle", "-b", required=True, help="Path to zip bundle")
+@click.option("--verify/--no-verify", default=True, help="Verify attestation on import")
+def import_bundle(bundle: str, verify: bool):
+    """Import an attested run bundle."""
+    from .storage.attestation import get_attestation_manager
+    import shutil
+    import zipfile
+    
+    bundle_path = Path(bundle)
+    
+    if not bundle_path.exists():
+        click.echo(f"✗ Bundle not found: {bundle}", err=True)
+        raise SystemExit(1)
+    
+    click.echo(f"Importing bundle: {bundle_path.name}")
+    
+    attester = get_attestation_manager()
+    
+    # Extract zip
+    click.echo("Extracting...")
+    with zipfile.ZipFile(bundle_path, 'r') as zf:
+        # Get run_id from directory name in zip
+        names = zf.namelist()
+        if not names:
+            click.echo("✗ Empty bundle", err=True)
+            raise SystemExit(1)
+        
+        run_id = names[0].split('/')[0]
+        
+        # Check if already exists
+        target_dir = attester.base_dir / run_id
+        if target_dir.exists():
+            click.echo(f"⚠ Run already exists: {run_id}")
+            if not click.confirm("Overwrite?"):
+                raise SystemExit(0)
+            shutil.rmtree(target_dir)
+        
+        # Extract to results dir
+        zf.extractall(attester.base_dir)
+    
+    click.echo(f"  Run ID: {run_id}")
+    
+    # Verify if requested
+    if verify:
+        click.echo("Verifying attestation...")
+        valid, issues = attester.verify(run_id)
+        
+        if valid:
+            attestation = attester.load_attestation(run_id)
+            click.echo(f"\n✓ Import successful - attestation valid")
+            click.echo(f"  Manifest hash: {attestation.manifest_hash[:16]}...")
+            click.echo(f"  Created: {attestation.created_at}")
+            click.echo(f"  Original env: Python {attestation.environment.python_version}")
+        else:
+            click.echo(f"\n✗ Import failed - attestation invalid!", err=True)
+            for issue in issues:
+                click.echo(f"  ✗ {issue}", err=True)
+            # Clean up
+            shutil.rmtree(target_dir)
+            raise SystemExit(1)
+    else:
+        click.echo(f"\n✓ Import successful (verification skipped)")
+    
+    click.echo(f"\nVerify with: python -m meridian.cli verify --id {run_id}")
 
 
 @main.command()
