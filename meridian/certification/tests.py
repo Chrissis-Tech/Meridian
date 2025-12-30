@@ -161,7 +161,7 @@ class CertificationSuite:
         test_name = "temperature_zero"
         
         try:
-            from .base import GenerationConfig
+            from meridian.model_adapters.base import GenerationConfig
             config = GenerationConfig(temperature=0.0, max_tokens=50)
             
             start = time.perf_counter()
@@ -193,7 +193,7 @@ class CertificationSuite:
         test_name = "determinism"
         
         try:
-            from .base import GenerationConfig
+            from meridian.model_adapters.base import GenerationConfig
             config = GenerationConfig(temperature=0.0, max_tokens=20)
             
             prompt = "Complete: The capital of France is"
@@ -267,7 +267,7 @@ class CertificationSuite:
         test_name = "max_tokens"
         
         try:
-            from .base import GenerationConfig
+            from meridian.model_adapters.base import GenerationConfig
             config = GenerationConfig(max_tokens=10)
             
             result = self.adapter.generate(
@@ -303,7 +303,7 @@ class CertificationSuite:
         test_name = "error_handling"
         
         try:
-            from .base import GenerationConfig
+            from meridian.model_adapters.base import GenerationConfig
             # Try with extreme parameters
             config = GenerationConfig(temperature=0.0, max_tokens=1)
             
