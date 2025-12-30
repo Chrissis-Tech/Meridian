@@ -104,18 +104,37 @@ with col1:
     )
 
 with col2:
+    # Get built-in suites
     try:
         from core.config import SUITES_DIR
-        suites = sorted([p.stem for p in SUITES_DIR.glob("*.jsonl")])
-        
-        # Recommended suites first
-        recommended_suites = ["rag_evaluation", "code_analysis", "business_analysis", "edge_cases"]
-        ordered_suites = [s for s in recommended_suites if s in suites]
-        ordered_suites += [s for s in suites if s not in recommended_suites]
-        
-        suite_name = st.selectbox("Select Suite", ordered_suites)
+        builtin_suites = sorted([p.stem for p in SUITES_DIR.glob("*.jsonl")])
     except:
-        suite_name = st.selectbox("Select Suite", ["rag_evaluation", "enterprise_prompts"])
+        builtin_suites = ["rag_evaluation", "code_analysis", "business_analysis"]
+    
+    # Get custom suites
+    try:
+        from meridian.suites.custom import get_custom_suite_manager
+        manager = get_custom_suite_manager()
+        custom_suites_list = manager.list_all()
+        custom_suite_names = [f"[Custom] {s['name']}" for s in custom_suites_list]
+    except:
+        custom_suite_names = []
+    
+    # Combine: recommended first, then custom, then rest
+    recommended = ["rag_evaluation", "code_analysis", "business_analysis", "edge_cases"]
+    ordered = [s for s in recommended if s in builtin_suites]
+    ordered += custom_suite_names  # Custom suites after recommended
+    ordered += [s for s in builtin_suites if s not in recommended]
+    
+    suite_selection = st.selectbox("Select Suite", ordered)
+    
+    # Parse if custom
+    is_custom_suite = suite_selection.startswith("[Custom] ")
+    if is_custom_suite:
+        suite_name = suite_selection.replace("[Custom] ", "")
+        st.caption("Custom suite from your uploaded data")
+    else:
+        suite_name = suite_selection
 
 # Pricing disclaimer
 st.caption(
@@ -181,8 +200,30 @@ if st.button("Run Evaluation", type="primary", use_container_width=True):
         from meridian.runner import SuiteRunner
         from meridian.types import RunConfig
         from meridian.config import SUITES_DIR
+        import tempfile
         
-        suite_path = SUITES_DIR / f"{suite_name}.jsonl"
+        # Handle custom vs built-in suites
+        if is_custom_suite:
+            # Load custom suite from database and export to temp file
+            from meridian.suites.custom import get_custom_suite_manager
+            manager = get_custom_suite_manager()
+            pack = manager.get_by_name(suite_name)
+            
+            if not pack:
+                st.error(f"Custom suite '{suite_name}' not found")
+                st.stop()
+            
+            # Create temp JSONL file
+            temp_file = tempfile.NamedTemporaryFile(
+                mode='w', suffix='.jsonl', delete=False, encoding='utf-8'
+            )
+            temp_file.write(pack.to_jsonl())
+            temp_file.close()
+            suite_path = Path(temp_file.name)
+            
+            st.info(f"Running custom suite: {len(pack.tests)} tests")
+        else:
+            suite_path = SUITES_DIR / f"{suite_name}.jsonl"
         
         runner = SuiteRunner()
         config = RunConfig(
