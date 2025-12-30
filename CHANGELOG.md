@@ -14,63 +14,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.4.0] - 2025-12-29
+## [0.4.0] - 2025-12-30
 
 ### Added
+
+#### Ed25519 Attestation Signing (`meridian/storage/signing.py`)
+- Cryptographic signatures for attestation bundles
+- CLI commands: `keygen`, `sign`, `verify --key`
+- Explicit threat model documentation
+- Key management (generate, save, load)
+
+#### Custom Suites (`meridian/suites/custom.py`)
+- Upload your own prompts (JSONL/CSV)
+- Dev/Holdout split (80/20) to prevent overfitting
+- Leak detection (warning if input contains expected)
+- Scorer suggestions (LLM Judge, JSON schema)
+- Suite versioning (v1, v2, etc.)
+- SQLite storage with export
+
+#### Suite Certification (`meridian/certification/suite_badge.py`)
+- Certify evaluation runs with verifiable badges
+- CLI: `meridian certify-run --id <run_id> --save`
+- SVG and Markdown badge generation
+- Accuracy + verification status
+
+#### Provider Certification (`meridian/certification/tests.py`)
+- 14 standardized tests for adapter validation
+- CLI: `meridian certify --model <model_id> --save`
+- 80%+ score = CERTIFIED status
 
 #### REST API (`api/server.py`)
 - Full REST API with FastAPI
 - Endpoints: `/api/suites`, `/api/runs`, `/api/compare`, `/api/generate`
 - Swagger documentation at `/docs`
-- CLI command: `python -m core.cli serve`
+- CLI command: `python -m meridian.cli serve`
 
-#### Playground UI (`ui/pages/6_Playground.py`)
-- Interactive prompt testing across models
-- File upload for documents (txt, md, csv, json, py, etc.)
-- Real-time cost and latency comparison
-- LLM Judge for complex evaluation
-- Export to JSON/Markdown
-- Save as test case
-
-#### LLM Judge (`core/judge.py`)
-- Evaluate complex outputs with another LLM
-- Scores: correctness, completeness, format adherence, no hallucination
-- Configurable pass threshold
+#### UI Pages
+- **Certification** (`ui/pages/8_Certification.py`) - Provider and Suite certification
+- **Create Suite** (`ui/pages/9_Create_Suite.py`) - Upload custom prompts
+- **Playground** (`ui/pages/6_Playground.py`) - Interactive testing
 
 #### New Model Providers
 - **Mistral AI**: mistral_small, mistral_medium, mistral_large
-- **Groq**: groq_llama70b, groq_llama8b, groq_mixtral (ultra-fast)
-- **Together AI**: together_llama70b, together_mixtral, together_codellama
+- **Groq**: groq_llama70b, groq_llama8b, groq_mixtral
+- **Together AI**: together_llama70b, together_mixtral
 
-#### HTML Reports (`core/reports/html_generator.py`)
+#### HTML Reports (`meridian/reports/html_generator.py`)
 - Beautiful single-file HTML reports
-- KPIs, confidence intervals, results table
-- CLI: `python -m core.cli report --run-id <id> --open`
+- CLI: `meridian report --run-id <id> --open`
 
-#### Premium UI Design
-- Monochrome "Vercel/Stripe" aesthetic
-- Custom Vega-Lite theme for charts
-- Reusable components: kpi_card, pills_bar, callout
-- Dumbbell charts for comparisons
-
-#### New Test Suite
-- `imo_generation_quality.jsonl` - Mathematical rigor evaluation
-- Anti-hedging, anti-contradiction, anti-truncation tests
-
-#### Webhook Notifications (`core/notifications/webhooks.py`)
-- Send alerts on run complete, regression, threshold breach
-- Supports Slack, Discord, Microsoft Teams
-- Configurable via environment variables
-
-#### Streaming Support (`core/streaming.py`)
-- Stream responses from LLM providers
-- Time to First Token (TTFT) metrics
-- Callback-based chunk handling
+#### Documentation
+- `docs/CUSTOM_SUITES.md` - Complete guide for custom suites
+- `docs/CERTIFICATION.md` - Provider and Suite certification
+- `docs/THREAT_MODEL.md` - Explicit threat model for attestation
 
 ### Changed
-- UI navigation updated with Playground
-- Model adapter registry refactored
-- Version bump to 0.4.0
+- **Breaking**: `core` module deprecated, use `meridian` instead
+- Verify command now supports signature verification with `--key`
+- Custom suites visible in Run Suite dropdown as `[Custom] name`
+
+### Removed
+- `core/` directory (replaced by `meridian/`)
 
 ---
 
