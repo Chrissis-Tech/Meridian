@@ -22,6 +22,7 @@ These numbers create false confidence before production deployment.
 
 - Test on **real production scenarios**, not sanitized demos
 - Report **honest results** with statistical confidence intervals
+- Provide **cryptographic verification** of evaluation results
 - Enable **meaningful comparison** between models
 - Prevent **regressions** before they reach users
 
@@ -50,16 +51,14 @@ Every evaluation includes:
 - **Effect Size** — Understand if differences are practically meaningful
 - **Regression Detection** — Statistical tests for A/B comparison
 
-### Scoring Methods
+### Tamper-Evident Attestation
 
-Tests use appropriate scoring for each task type:
+Every run can generate a **cryptographically verifiable bundle**:
 
-- **Exact Match** — For deterministic outputs
-- **Contains** — For required keywords or facts
-- **Regex** — For format validation
-- **JSON Schema** — For structured output compliance
-- **Length Constraints** — For format adherence
-- **Semantic Similarity** — For meaning preservation
+- SHA256 hashing of all artifacts (responses, config, suite)
+- Environment capture (Python version, OS, git commit)
+- Portable export as ZIP for sharing or archival
+- Any modification to results fails verification
 
 ---
 
@@ -78,18 +77,16 @@ Tested with DeepSeek Chat on production-grade suites:
 
 **Average on production tasks: 58%**
 
-The same model scoring 95% on easy benchmarks scores 58% here.
-That's the real capability level you should plan for.
-
 ---
 
 ## Using Your Own Data
 
-You can create custom test suites with your own prompts and expected answers:
+Create custom test suites with your own prompts and expected answers:
 
 1. **Copy the template**: `suites/_template.jsonl`
 2. **Add your test cases** in JSONL format
-3. **Run**: `python -m core.cli run --suite your_suite --model deepseek_chat`
+3. **Run**: `python -m meridian.cli run --suite your_suite --model deepseek_chat`
+4. **Attest**: Add `--attest` flag for verifiable bundles
 
 ### Example Test Case
 
@@ -107,7 +104,27 @@ You can create custom test suites with your own prompts and expected answers:
 | `length` | Max sentences/words | `{"max_sentences": 3}` |
 | `json_schema` | Structured output | Full JSON Schema |
 
-See full documentation: [`docs/custom_suites.md`](https://github.com/Chrissis-Tech/Meridian/blob/main/docs/custom_suites.md)
+---
+
+## CLI Commands
+
+```bash
+# Run evaluation
+python -m meridian.cli run --suite rag_evaluation --model deepseek_chat
+
+# Run with attestation
+python -m meridian.cli run --suite rag_evaluation --model deepseek_chat --attest
+
+# Verify attestation
+python -m meridian.cli verify --id <run_id>
+
+# Replay a run
+python -m meridian.cli replay --id <run_id> --mode drift
+
+# Export/Import bundles
+python -m meridian.cli export --id <run_id>
+python -m meridian.cli import --bundle <file.zip>
+```
 
 ---
 
@@ -121,7 +138,7 @@ If you use Meridian in your research or product evaluation:
   author = {Chrissis-Tech},
   year = {2025},
   url = {https://github.com/Chrissis-Tech/Meridian},
-  version = {0.3.0}
+  version = {0.4.0}
 }
 ```
 
@@ -138,20 +155,20 @@ If you use Meridian in your research or product evaluation:
 
 ## Version
 
-**Meridian v0.3.0** — December 2025
+**Meridian v0.4.0** — December 2025
 
-*Honest evaluation for LLMs in production. Not inflated benchmarks.*
+*Honest evaluation for LLMs in production. Cryptographically verifiable.*
 """)
 
 # Sidebar info
 with st.sidebar:
     st.markdown("### Quick Facts")
     st.markdown("""
-    - **15 test suites**
-    - **210+ test cases**
-    - **6 production-grade suites**
-    - **5 supported models**
-    - **Statistical rigor included**
+    - **18 test suites**
+    - **250+ test cases**
+    - **6 provider families**
+    - **17+ models**
+    - **Tamper-evident attestation**
     """)
     
     st.markdown("---")
@@ -159,5 +176,9 @@ with st.sidebar:
     st.markdown("""
     - DeepSeek Chat/Coder
     - OpenAI GPT-3.5/4
+    - Mistral Small/Medium
+    - Groq (Llama, Mixtral)
+    - Together AI
     - Local (DistilGPT-2, Flan-T5)
     """)
+
