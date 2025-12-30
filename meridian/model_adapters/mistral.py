@@ -1,8 +1,12 @@
 """
 Meridian Model Adapter - Mistral AI
+
+Uses direct HTTP API to avoid SDK version issues.
 """
 
 import os
+import time
+import requests
 from typing import Optional
 
 from .base import ModelAdapter, GenerationConfig
@@ -10,24 +14,14 @@ from ..types import GenerationResult, ModelInfo, ModelType
 
 
 class MistralAdapter(ModelAdapter):
-    """Adapter for Mistral AI API"""
+    """Adapter for Mistral AI API using direct HTTP calls."""
+    
+    API_BASE = "https://api.mistral.ai/v1"
     
     def __init__(self, model_name: str = "mistral-medium"):
         self._model_name = model_name
         self._model_id = f"mistral_{model_name.replace('-', '_')}"
-        self._client = None
-        self._init_client()
-    
-    def _init_client(self):
-        api_key = os.getenv("MISTRAL_API_KEY")
-        if not api_key:
-            return
-        
-        try:
-            from mistralai.client import MistralClient
-            self._client = MistralClient(api_key=api_key)
-        except ImportError:
-            pass
+        self._api_key = os.getenv("MISTRAL_API_KEY")
     
     @property
     def model_id(self) -> str:
@@ -38,33 +32,89 @@ class MistralAdapter(ModelAdapter):
         prompt: str,
         config: Optional[GenerationConfig] = None
     ) -> GenerationResult:
-        if not self._client:
-            raise RuntimeError("Mistral client not initialized. Set MISTRAL_API_KEY.")
+        if not self._api_key:
+            return GenerationResult(
+                output="",
+                tokens_in=0,
+                tokens_out=0,
+                latency_ms=0,
+                finish_reason="error",
+                error="Mistral API key not set. Set MISTRAL_API_KEY.",
+                raw_response={}
+            )
         
         config = config or GenerationConfig()
         
-        from mistralai.models.chat_completion import ChatMessage
+        headers = {
+            "Authorization": f"Bearer {self._api_key}",
+            "Content-Type": "application/json"
+        }
         
-        messages = [ChatMessage(role="user", content=prompt)]
+        payload = {
+            "model": self._model_name,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": config.temperature,
+            "max_tokens": config.max_tokens,
+        }
         
-        response = self._client.chat(
-            model=self._model_name,
-            messages=messages,
-            temperature=config.temperature,
-            max_tokens=config.max_tokens,
-        )
+        start = time.perf_counter()
         
-        choice = response.choices[0]
-        output = choice.message.content
-        
-        return GenerationResult(
-            output=output,
-            tokens_in=response.usage.prompt_tokens,
-            tokens_out=response.usage.completion_tokens,
-            latency_ms=0,  # Not provided by API
-            finish_reason=choice.finish_reason or "stop",
-            raw_response={"model": self._model_name}
-        )
+        try:
+            response = requests.post(
+                f"{self.API_BASE}/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=60
+            )
+            
+            latency_ms = (time.perf_counter() - start) * 1000
+            
+            if response.status_code != 200:
+                return GenerationResult(
+                    output="",
+                    tokens_in=0,
+                    tokens_out=0,
+                    latency_ms=latency_ms,
+                    finish_reason="error",
+                    error=f"Mistral API error {response.status_code}: {response.text[:200]}",
+                    raw_response={"status": response.status_code}
+                )
+            
+            data = response.json()
+            
+            choice = data["choices"][0]
+            output = choice["message"]["content"]
+            usage = data.get("usage", {})
+            
+            return GenerationResult(
+                output=output,
+                tokens_in=usage.get("prompt_tokens", 0),
+                tokens_out=usage.get("completion_tokens", 0),
+                latency_ms=latency_ms,
+                finish_reason=choice.get("finish_reason", "stop"),
+                raw_response={"model": self._model_name}
+            )
+            
+        except requests.Timeout:
+            return GenerationResult(
+                output="",
+                tokens_in=0,
+                tokens_out=0,
+                latency_ms=60000,
+                finish_reason="error",
+                error="Mistral API timeout",
+                raw_response={}
+            )
+        except Exception as e:
+            return GenerationResult(
+                output="",
+                tokens_in=0,
+                tokens_out=0,
+                latency_ms=0,
+                finish_reason="error",
+                error=f"Mistral error: {str(e)}",
+                raw_response={}
+            )
     
     def get_model_info(self) -> ModelInfo:
         return ModelInfo(
@@ -73,8 +123,8 @@ class MistralAdapter(ModelAdapter):
             context_length=32000,
             supports_system_prompt=True,
             supports_functions=False,
-            cost_per_1k_input=0.0027,  # ~$2.70/M
-            cost_per_1k_output=0.0081  # ~$8.10/M
+            cost_per_1k_input=0.0027,
+            cost_per_1k_output=0.0081
         )
     
     def estimate_cost(self, tokens_in: int, tokens_out: int) -> float:
@@ -83,14 +133,15 @@ class MistralAdapter(ModelAdapter):
 
 class MistralSmallAdapter(MistralAdapter):
     def __init__(self):
-        super().__init__("mistral-small")
+        super().__init__("mistral-small-latest")
 
 
 class MistralMediumAdapter(MistralAdapter):
     def __init__(self):
-        super().__init__("mistral-medium")
+        super().__init__("mistral-medium-latest")
 
 
 class MistralLargeAdapter(MistralAdapter):
     def __init__(self):
         super().__init__("mistral-large-latest")
+
