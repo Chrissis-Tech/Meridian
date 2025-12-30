@@ -1,0 +1,12 @@
+{
+  "run_id": "run_20251230_030301_82b5835d",
+  "suite_name": "rag_evaluation",
+  "model_id": "deepseek_chat",
+  "accuracy": 80.0,
+  "passed_tests": 8,
+  "total_tests": 10,
+  "timestamp": "2025-12-30T10:36:27.530608",
+  "attestation_hash": "e73a0153f658e9d5",
+  "badge_hash": "11d5dd5c730bd205",
+  "verified": true
+}

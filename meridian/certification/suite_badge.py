@@ -47,34 +47,41 @@ def certify_suite_run(run_id: str) -> SuiteCertification:
     # Check attestation
     is_valid, _ = atm.verify(run_id)
     
-    # Load metrics
-    metrics_file = run_dir / "metrics.json"
-    if metrics_file.exists():
-        with open(metrics_file) as f:
-            metrics = json.load(f)
-    else:
-        metrics = {}
-    
     # Load config
     config_file = run_dir / "config.json"
     if config_file.exists():
-        with open(config_file) as f:
+        with open(config_file, encoding='utf-8') as f:
             config = json.load(f)
     else:
         config = {}
+    
+    # Calculate metrics from responses
+    responses_dir = run_dir / "responses"
+    passed = 0
+    total = 0
+    
+    if responses_dir.exists():
+        for resp_file in responses_dir.glob("*.json"):
+            try:
+                with open(resp_file, encoding='utf-8') as f:
+                    resp = json.load(f)
+                total += 1
+                # Check if test passed (correct field may vary)
+                if resp.get("correct") or resp.get("passed") or resp.get("is_correct"):
+                    passed += 1
+            except:
+                pass
+    
+    accuracy = (passed / total * 100) if total > 0 else 0.0
     
     # Load attestation manifest
     manifest_file = run_dir / "attestation.json"
     attestation_hash = ""
     if manifest_file.exists():
-        with open(manifest_file) as f:
+        with open(manifest_file, encoding='utf-8') as f:
             manifest = json.load(f)
             attestation_hash = manifest.get("manifest_hash", "")[:16]
     
-    # Extract data
-    accuracy = metrics.get("accuracy", 0.0)
-    passed = metrics.get("passed", 0)
-    total = metrics.get("total", 0)
     suite_name = config.get("suite", "unknown")
     model_id = config.get("model", "unknown")
     timestamp = config.get("timestamp", datetime.utcnow().isoformat())
@@ -169,12 +176,12 @@ def save_suite_certification(cert: SuiteCertification, output_dir: Optional[Path
     
     # Save JSON report
     json_path = output_dir / f"{base_name}.json"
-    with open(json_path, 'w') as f:
+    with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(cert.to_dict(), f, indent=2)
     
     # Save SVG badge
     svg_path = output_dir / f"{base_name}_badge.svg"
-    with open(svg_path, 'w') as f:
+    with open(svg_path, 'w', encoding='utf-8') as f:
         f.write(generate_suite_badge_svg(cert))
     
     return json_path
