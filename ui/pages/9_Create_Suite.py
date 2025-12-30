@@ -20,6 +20,45 @@ Your suite will be validated for common issues before saving.
 """)
 
 # ============================================================================
+# DEMO SUITE BUTTON
+# ============================================================================
+
+col1, col2, col3 = st.columns([1, 1, 2])
+
+with col1:
+    if st.button("Create Demo Suite", help="Create a sample suite with 10 tests"):
+        demo_content = '''{"id": "math_1", "input": "What is 2+2?", "expected": "4", "scorer": "exact"}
+{"id": "math_2", "input": "What is 15 divided by 3?", "expected": "5", "scorer": "exact"}
+{"id": "translate_1", "input": "Translate 'hello' to Spanish", "expected": "hola", "scorer": "contains"}
+{"id": "translate_2", "input": "Translate 'goodbye' to French", "expected": "au revoir", "scorer": "contains"}
+{"id": "capital_1", "input": "What is the capital of France?", "expected": "Paris", "scorer": "contains"}
+{"id": "capital_2", "input": "What is the capital of Japan?", "expected": "Tokyo", "scorer": "contains"}
+{"id": "code_1", "input": "Write a Python function that returns the sum of two numbers", "expected": "def", "scorer": "contains"}
+{"id": "json_1", "input": "Return a JSON object with keys 'name' and 'age'", "expected": "{", "scorer": "contains"}
+{"id": "reason_1", "input": "If all cats are mammals and all mammals breathe air, do cats breathe air?", "expected": "yes", "scorer": "contains"}
+{"id": "essay_1", "input": "Explain the importance of testing in software development", "scorer": "llm_judge", "rubric": "Score 1-5: clarity, completeness, practical examples"}'''
+        
+        from meridian.suites.custom import EvaluationPack, get_custom_suite_manager
+        
+        pack = EvaluationPack.from_jsonl(
+            name="demo_suite",
+            content=demo_content,
+            description="Sample suite with 10 diverse tests"
+        )
+        
+        manager = get_custom_suite_manager()
+        suite_id = manager.save(pack)
+        
+        st.success(f"Demo suite created. ID: `{suite_id}`")
+        st.info("Go to 'Run Suite' and select '[Custom] demo_suite'")
+        st.rerun()
+
+with col2:
+    st.caption("10 tests covering math, translation, code, reasoning")
+
+st.markdown("---")
+
+# ============================================================================
 # UPLOAD SECTION
 # ============================================================================
 
@@ -112,8 +151,18 @@ if st.button("Validate and Preview", type="primary"):
             else:
                 pack = EvaluationPack.from_csv(suite_name, content, suite_description)
             
-            # Validate
+            # Validate with scorer suggestions
             issues = pack.validate()
+            suggestions = []
+            
+            for test in pack.tests:
+                # Suggest LLM Judge if no expected
+                if not test.expected and test.scorer != "llm_judge":
+                    suggestions.append(f"Test '{test.id}': no expected value - consider using scorer='llm_judge' with a rubric")
+                
+                # Suggest JSON schema if expected looks like JSON
+                if test.expected and test.expected.strip().startswith("{"):
+                    suggestions.append(f"Test '{test.id}': expected looks like JSON - consider scorer='json_schema'")
             
             # Display results
             st.markdown("### Validation Results")
@@ -122,12 +171,12 @@ if st.button("Validate and Preview", type="primary"):
             with col1:
                 st.metric("Test Cases", len(pack.tests))
             with col2:
-                st.metric("Issues Found", len(issues))
+                st.metric("Issues", len(issues))
             with col3:
                 status = "Ready" if not issues else "Has Warnings"
                 st.metric("Status", status)
             
-            # Show issues
+            # Show issues with line context
             if issues:
                 st.warning("**Validation Issues:**")
                 for issue in issues:
@@ -138,15 +187,21 @@ if st.button("Validate and Preview", type="primary"):
             else:
                 st.success("No issues found.")
             
+            # Show suggestions
+            if suggestions:
+                with st.expander(f"Suggestions ({len(suggestions)})"):
+                    for sug in suggestions[:5]:
+                        st.info(f"- {sug}")
+            
             # Preview tests
             st.markdown("### Preview")
             
             preview_data = []
-            for test in pack.tests[:10]:  # Show first 10
+            for test in pack.tests[:10]:
                 preview_data.append({
                     "ID": test.id,
                     "Input": test.input[:50] + "..." if len(test.input) > 50 else test.input,
-                    "Expected": (test.expected[:30] + "...") if test.expected and len(test.expected) > 30 else test.expected,
+                    "Expected": (test.expected[:30] + "...") if test.expected and len(test.expected) > 30 else (test.expected or "[LLM Judge]"),
                     "Scorer": test.scorer
                 })
             
@@ -167,11 +222,14 @@ if st.button("Validate and Preview", type="primary"):
             existing = manager.get_by_name(suite_name)
             
             if existing:
-                st.warning(f"A suite named '{suite_name}' already exists. Saving will overwrite it.")
+                st.warning(f"Suite '{suite_name}' exists (v{existing.version}). Saving will create v{existing.version + 1}.")
             
             if st.button("Save Suite", type="primary", key="save_suite"):
+                if existing:
+                    pack.version = existing.version + 1
+                
                 suite_id = manager.save(pack)
-                st.success(f"Suite saved. ID: `{suite_id}`")
+                st.success(f"Suite saved (v{pack.version}). ID: `{suite_id}`")
                 st.info("Go to 'Run Suite' to execute your evaluation.")
                 
         except ValueError as e:
@@ -192,7 +250,7 @@ manager = get_custom_suite_manager()
 suites = manager.list_all()
 
 if not suites:
-    st.info("No custom suites yet. Upload one above.")
+    st.info("No custom suites yet. Upload one above or click 'Create Demo Suite'.")
 else:
     for suite in suites:
         with st.expander(f"{suite['name']} ({suite['test_count']} tests)"):
@@ -219,6 +277,34 @@ else:
                         st.success("Deleted")
                         st.rerun()
 
-# Footer
+# ============================================================================
+# HAPPY PATH GUIDE
+# ============================================================================
+
 st.markdown("---")
+st.markdown("### Quick Start Guide")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown("""
+    **Step 1: Create Suite**
+    
+    Upload JSONL/CSV with your prompts, or use the demo suite.
+    """)
+
+with col2:
+    st.markdown("""
+    **Step 2: Run Evaluation**
+    
+    Go to 'Run Suite', select your suite, enable attestation, run.
+    """)
+
+with col3:
+    st.markdown("""
+    **Step 3: Certify Results**
+    
+    Go to 'Certification', generate a verified badge.
+    """)
+
 st.caption("Suites are stored locally in SQLite. Use Export to share.")
