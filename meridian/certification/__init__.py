@@ -15,8 +15,16 @@ from .badge import (
     generate_badge_markdown,
     save_certification,
 )
+from .suite_badge import (
+    SuiteCertification,
+    certify_suite_run,
+    generate_suite_badge_svg,
+    generate_suite_badge_markdown,
+    save_suite_certification,
+)
 
 __all__ = [
+    # Provider certification
     "CertificationSuite",
     "CertificationResult", 
     "ProviderCertification",
@@ -24,4 +32,10 @@ __all__ = [
     "generate_badge_svg",
     "generate_badge_markdown",
     "save_certification",
+    # Suite certification
+    "SuiteCertification",
+    "certify_suite_run",
+    "generate_suite_badge_svg",
+    "generate_suite_badge_markdown",
+    "save_suite_certification",
 ]

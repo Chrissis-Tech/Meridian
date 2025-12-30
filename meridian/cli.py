@@ -403,6 +403,47 @@ def certify(model: str, output: str, save: bool):
         click.echo(f"Badge saved: {report_path.with_name(report_path.stem + '_badge.svg')}")
 
 
+@main.command("certify-run")
+@click.option("--id", "-i", "run_id", required=True, help="Run ID to certify")
+@click.option("--output", "-o", help="Output directory for certification")
+@click.option("--save", is_flag=True, help="Save certification report and badge")
+def certify_run(run_id: str, output: str, save: bool):
+    """Generate a verification badge for an attested evaluation run."""
+    from .certification.suite_badge import (
+        certify_suite_run, 
+        save_suite_certification,
+        generate_suite_badge_markdown
+    )
+    
+    click.echo(f"Certifying run '{run_id}'...")
+    
+    try:
+        cert = certify_suite_run(run_id)
+    except Exception as e:
+        click.echo(f"✗ Certification failed: {e}", err=True)
+        raise SystemExit(1)
+    
+    # Display results
+    click.echo(f"\n{'='*50}")
+    click.echo(f"Suite: {cert.suite_name}")
+    click.echo(f"Model: {cert.model_id}")
+    click.echo(f"Accuracy: {cert.accuracy:.1f}%")
+    click.echo(f"Tests: {cert.passed_tests}/{cert.total_tests}")
+    click.echo(f"Verified: {'Yes' if cert.verified else 'No'}")
+    click.echo(f"Attestation hash: {cert.attestation_hash}")
+    click.echo(f"Badge hash: {cert.badge_hash}")
+    click.echo(f"{'='*50}")
+    
+    click.echo(f"\nBadge: {generate_suite_badge_markdown(cert)}")
+    
+    if save:
+        from pathlib import Path
+        output_dir = Path(output) if output else None
+        report_path = save_suite_certification(cert, output_dir)
+        click.echo(f"\nReport saved: {report_path}")
+        click.echo(f"Badge saved: {report_path.with_name(report_path.stem + '_badge.svg')}")
+
+
 @main.command()
 @click.option("--baseline", "-b", required=True, help="Baseline JSON file")
 @click.option("--suite", "-s", help="Specific suite to check")
