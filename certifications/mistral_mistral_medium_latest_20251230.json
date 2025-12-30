@@ -1,20 +1,20 @@
 {
   "provider_id": "mistral",
   "model_id": "mistral_mistral_medium_latest",
-  "timestamp": "2025-12-30T08:11:35.053394Z",
+  "timestamp": "2025-12-30T08:30:39.957249Z",
   "tests": [
     {
       "test_name": "connectivity",
       "passed": true,
       "message": "API connection successful",
-      "latency_ms": 1615.2671000018017,
+      "latency_ms": 1268.8487999985227,
       "details": {}
     },
     {
       "test_name": "basic_generation",
       "passed": true,
       "message": "Basic math correct",
-      "latency_ms": 1649.047300001257,
+      "latency_ms": 1617.7018000016687,
       "details": {
         "output": "4"
       }
@@ -23,7 +23,7 @@
       "test_name": "temperature_zero",
       "passed": true,
       "message": "Temperature 0 supported",
-      "latency_ms": 1731.5687000082107,
+      "latency_ms": 1458.0070999945747,
       "details": {}
     },
     {
@@ -38,13 +38,13 @@
     {
       "test_name": "latency",
       "passed": true,
-      "message": "Average latency: 2013ms",
-      "latency_ms": 2013.3949333345906,
+      "message": "Average latency: 1715ms",
+      "latency_ms": 1715.1576666656183,
       "details": {
         "latencies": [
-          1841.130400003749,
-          2562.86029999319,
-          1636.1941000068327
+          1631.315699996776,
+          1295.0409000040963,
+          2219.1163999959826
         ]
       }
     },
@@ -63,18 +63,72 @@
       "message": "Handles edge cases gracefully",
       "latency_ms": 0.0,
       "details": {}
+    },
+    {
+      "test_name": "system_prompt",
+      "passed": true,
+      "message": "Instruction following works",
+      "latency_ms": 0.0,
+      "details": {}
+    },
+    {
+      "test_name": "json_mode",
+      "passed": true,
+      "message": "Valid JSON generated",
+      "latency_ms": 0.0,
+      "details": {
+        "json": {
+          "name": "Alex",
+          "age": 28
+        }
+      }
+    },
+    {
+      "test_name": "context_window",
+      "passed": true,
+      "message": "Handles 2K+ token context",
+      "latency_ms": 0.0,
+      "details": {}
+    },
+    {
+      "test_name": "unicode_handling",
+      "passed": true,
+      "message": "Unicode characters handled correctly",
+      "latency_ms": 0.0,
+      "details": {}
+    },
+    {
+      "test_name": "empty_prompt",
+      "passed": true,
+      "message": "Handles minimal prompt",
+      "latency_ms": 0.0,
+      "details": {}
+    },
+    {
+      "test_name": "long_output",
+      "passed": true,
+      "message": "Generated 1872 chars",
+      "latency_ms": 0.0,
+      "details": {}
+    },
+    {
+      "test_name": "special_characters",
+      "passed": true,
+      "message": "Special characters handled",
+      "latency_ms": 0.0,
+      "details": {}
     }
   ],
   "overall_passed": true,
   "score": 100,
-  "badge_hash": "70c11e40c9971880",
+  "badge_hash": "89afce82e3df22e8",
   "environment": {
     "python_version": "3.14.0",
     "platform": "Windows-11-10.0.26100-SP0",
     "os_name": "Windows",
     "meridian_version": "0.4.0",
-    "git_commit": "5f5f248a679d",
-    "git_dirty": true,
-    "timestamp": "2025-12-30T08:11:35.281193Z"
+    "git_commit": "13efb80a383d",
+    "git_dirty": false,
+    "timestamp": "2025-12-30T08:30:40.176128Z"
   }
 }

@@ -1,20 +1,20 @@
 {
   "provider_id": "openai",
   "model_id": "openai_gpt4",
-  "timestamp": "2025-12-30T08:09:34.628231Z",
+  "timestamp": "2025-12-30T08:41:04.390487Z",
   "tests": [
     {
       "test_name": "connectivity",
       "passed": true,
       "message": "API connection successful",
-      "latency_ms": 2719.4211000023643,
+      "latency_ms": 2205.6535000010626,
       "details": {}
     },
     {
       "test_name": "basic_generation",
       "passed": true,
       "message": "Basic math correct",
-      "latency_ms": 1393.3295000024373,
+      "latency_ms": 586.9622000027448,
       "details": {
         "output": "4"
       }
@@ -23,7 +23,7 @@
       "test_name": "temperature_zero",
       "passed": true,
       "message": "Temperature 0 supported",
-      "latency_ms": 1124.9412000033772,
+      "latency_ms": 659.9386000016239,
       "details": {}
     },
     {
@@ -38,13 +38,13 @@
     {
       "test_name": "latency",
       "passed": true,
-      "message": "Average latency: 1247ms",
-      "latency_ms": 1246.7217333420801,
+      "message": "Average latency: 864ms",
+      "latency_ms": 863.8868666651737,
       "details": {
         "latencies": [
-          1078.0281000043033,
-          1952.1228000085102,
-          710.0143000134267
+          1335.508000003756,
+          491.44240000168793,
+          764.710199990077
         ]
       }
     },
@@ -63,18 +63,72 @@
       "message": "Handles edge cases gracefully",
       "latency_ms": 0.0,
       "details": {}
+    },
+    {
+      "test_name": "system_prompt",
+      "passed": true,
+      "message": "Instruction following works",
+      "latency_ms": 0.0,
+      "details": {}
+    },
+    {
+      "test_name": "json_mode",
+      "passed": true,
+      "message": "Valid JSON generated",
+      "latency_ms": 0.0,
+      "details": {
+        "json": {
+          "name": "John",
+          "age": 30
+        }
+      }
+    },
+    {
+      "test_name": "context_window",
+      "passed": true,
+      "message": "Handles 2K+ token context",
+      "latency_ms": 0.0,
+      "details": {}
+    },
+    {
+      "test_name": "unicode_handling",
+      "passed": true,
+      "message": "Unicode characters handled correctly",
+      "latency_ms": 0.0,
+      "details": {}
+    },
+    {
+      "test_name": "empty_prompt",
+      "passed": true,
+      "message": "Handles minimal prompt",
+      "latency_ms": 0.0,
+      "details": {}
+    },
+    {
+      "test_name": "long_output",
+      "passed": true,
+      "message": "Generated 1068 chars",
+      "latency_ms": 0.0,
+      "details": {}
+    },
+    {
+      "test_name": "special_characters",
+      "passed": true,
+      "message": "Special characters handled",
+      "latency_ms": 0.0,
+      "details": {}
     }
   ],
   "overall_passed": true,
   "score": 100,
-  "badge_hash": "a91331a8d2a50695",
+  "badge_hash": "aaf60d1a3c6a98ea",
   "environment": {
     "python_version": "3.14.0",
     "platform": "Windows-11-10.0.26100-SP0",
     "os_name": "Windows",
     "meridian_version": "0.4.0",
-    "git_commit": "5f5f248a679d",
+    "git_commit": "13efb80a383d",
     "git_dirty": true,
-    "timestamp": "2025-12-30T08:09:34.871332Z"
+    "timestamp": "2025-12-30T08:41:04.585044Z"
   }
 }
