@@ -214,6 +214,12 @@ python -m meridian.cli export --id <run_id>
 
 # Import and verify bundle
 python -m meridian.cli import --bundle <file.zip>
+
+# Certify a provider (14 tests)
+python -m meridian.cli certify --model <model_id> --save
+
+# Certify a run (get verification badge)  
+python -m meridian.cli certify-run --id <run_id> --save
 ```
 
 **What Attestation Does:**
@@ -221,6 +227,7 @@ python -m meridian.cli import --bundle <file.zip>
 - **Environment capture** (Python version, OS, git commit)
 - **Secret redaction** (API keys never stored)
 - **Tamper detection** (any modification fails verification)
+- **Badge generation** (verified accuracy badges for README)
 
 > **Note**: `python -m core.cli` still works but is deprecated. Use `meridian.cli` instead.
 
