@@ -115,28 +115,45 @@ streamlit run ui/app.py
 
 ## Real Results (December 2025)
 
-Tested with DeepSeek Chat (`deepseek_chat`) · v0.4.0 · [Golden run artifact](golden_runs/2025-12-28_deepseek_chat/)
+### Multi-Model Comparison
 
-| Category | Accuracy | Evidence |
-|----------|----------|----------|
-| **RAG / Retrieval** | 80% | [run_20251228](golden_runs/2025-12-28_deepseek_chat/) |
-| **Edge Cases** | 75% | [run_20251228](golden_runs/2025-12-28_deepseek_chat/) |
-| **Code Analysis** | 60% | [run_20251228](golden_runs/2025-12-28_deepseek_chat/) |
-| **Multi-step Reasoning** | 60% | [run_20251228](golden_runs/2025-12-28_deepseek_chat/) |
-| **Document Processing** | 40% | [run_20251228](golden_runs/2025-12-28_deepseek_chat/) |
-| **Business Calculations** | 30% | [run_20251228](golden_runs/2025-12-28_deepseek_chat/) |
+All results are **cryptographically attested** and verifiable. [Learn how](docs/METHODOLOGY.md)
 
-**Average on production tasks: 58%** — [Reproduce these results](REPRODUCIBILITY.md)
+| Suite | DeepSeek | GPT-4 | Mistral | Evidence |
+|-------|----------|-------|---------|----------|
+| RAG Evaluation | **80%** | 40% | 60% | [bundles](golden_runs/) |
+| Code Analysis | 70% | 50% | **80%** | [bundles](golden_runs/) |
+| Multi-step Reasoning | **60%** | 50% | 40% | [bundles](golden_runs/) |
+| Document Processing | 40% | **80%** | 30% | [bundles](golden_runs/) |
+| Business Analysis | **30%** | 20% | 20% | [bundles](golden_runs/) |
+| **Average** | **56%** | **48%** | **46%** | |
+
+### Attested Golden Runs
+
+| Model | Date | Bundles | Verification |
+|-------|------|---------|--------------|
+| DeepSeek Chat | 2025-12-30 | [5 suites](golden_runs/2025-12-30_attested/) | `verify --id run_20251229_*` |
+| GPT-4 | 2025-12-30 | [5 suites](golden_runs/2025-12-30_gpt4/) | `verify --id run_20251230_002*` |
+| Mistral Medium | 2025-12-30 | [5 suites](golden_runs/2025-12-30_mistral/) | `verify --id run_20251230_005*` |
+
+### Why These Results Matter
+
+- Same model scoring **95% on MMLU** scores **56% here**
+- Not a flaw — production tasks are harder than benchmarks
+- [See real failure examples](docs/FAILURE_EXAMPLES.md)
+
+**Reproduce:** [REPRODUCIBILITY.md](REPRODUCIBILITY.md) | **Methodology:** [docs/METHODOLOGY.md](docs/METHODOLOGY.md)
 
 ## Documentation
 
 | Document | Description |
 |----------|-------------|
+| [docs/METHODOLOGY.md](docs/METHODOLOGY.md) | How suites are designed and scored |
+| [docs/FAILURE_EXAMPLES.md](docs/FAILURE_EXAMPLES.md) | Real model outputs and why they failed |
 | [docs/USE_CASES.md](docs/USE_CASES.md) | Real-world usage examples |
 | [docs/PROVIDERS.md](docs/PROVIDERS.md) | Provider matrix and setup |
 | [docs/whitepaper.md](docs/whitepaper.md) | Theoretical foundations |
 | [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) | Security coverage and limitations |
-| [docs/one_pager.md](docs/one_pager.md) | Summary for presentations |
 | [REPRODUCIBILITY.md](REPRODUCIBILITY.md) | How to reproduce results |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
 
